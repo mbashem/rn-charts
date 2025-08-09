@@ -1,0 +1,1 @@
+{"version":3,"names":["multiply","a","b","default","BarChart","PieChart"],"sourceRoot":"../../src","sources":["index.tsx"],"mappings":";;AAAA,OAAO,SAASA,QAAQA,CAACC,CAAS,EAAEC,CAAS,EAAU;EACrD,OAAOD,CAAC,GAAGC,CAAC;AACd;AAEA,SAASC,OAAO,IAAIC,QAAQ,QAAQ,oBAAiB;AACrD,cAAc,oBAAiB;AAC/B,cAAc,oBAAiB;AAC/B,SAASD,OAAO,IAAIE,QAAQ,QAAQ,oBAAiB","ignoreList":[]}
