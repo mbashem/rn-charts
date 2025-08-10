@@ -1,0 +1,1 @@
+{"version":3,"file":"Tooltip.d.ts","sourceRoot":"","sources":["../../../../src/skia/Tooltip.tsx"],"names":[],"mappings":"AAGA,MAAM,WAAW,WAAW;IAC3B,CAAC,EAAE,MAAM,CAAC;IACV,CAAC,EAAE,MAAM,CAAC;IACV,KAAK,EAAE,MAAM,CAAC;CACd;AAED,MAAM,CAAC,OAAO,UAAU,OAAO,CAAC,EAAE,IAAI,EAAE,EAAE;IAAE,IAAI,EAAE,WAAW,GAAG,SAAS,CAAA;CAAE,kDAmB1E"}

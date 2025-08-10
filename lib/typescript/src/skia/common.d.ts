@@ -1,3 +1,4 @@
+import { type SkFont } from "@shopify/react-native-skia";
 export interface CommonStyles {
     barWidth?: number;
     spacing?: number;
@@ -8,4 +9,6 @@ export interface CommonStyles {
     paddingRight?: number;
 }
 export declare function getRandomRGBColor(): string;
+export declare const systemFontFamilies: string[];
+export declare const font: SkFont;
 //# sourceMappingURL=common.d.ts.map

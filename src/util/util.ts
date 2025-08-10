@@ -78,3 +78,12 @@ export function isFunction(value: any): value is Function {
 export function isString(node: ReactNode): node is string {
   return typeof node === "string";
 }
+
+type ArrayLengthMutationKeys = 'splice' | 'push' | 'pop' | 'shift' |  'unshift'
+export type FixedLengthArray<T, L extends number, TObj = [T, ...Array<T>]> =
+  Pick<TObj, Exclude<keyof TObj, ArrayLengthMutationKeys>>
+  & {
+    readonly length: L 
+    [ I : number ] : T
+    [Symbol.iterator]: () => IterableIterator<T>   
+  }

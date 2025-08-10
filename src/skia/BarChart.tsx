@@ -1,17 +1,15 @@
 // BarChart.tsx
-import React, { Fragment, useMemo, useState } from "react";
-import { type GestureResponderEvent, ScrollView, useWindowDimensions } from "react-native";
+import React, { Fragment, useMemo, useState } from 'react';
 import {
-  Canvas,
-  Rect,
-  Text,
-  vec,
-  Line,
-} from "@shopify/react-native-skia";
-import { arrayFrom, getFormattedString, isDefined } from "../util/util";
-import { font, type CommonStyles } from "./common";
-import type { TooltipData } from "./Tooltip";
-import ToolTip from "./Tooltip";
+  type GestureResponderEvent,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
+import { Canvas, Rect, Text, vec, Line } from '@shopify/react-native-skia';
+import { arrayFrom, getFormattedString, isDefined } from '../util/util';
+import { font, type CommonStyles } from './common';
+import type { TooltipData } from './Tooltip';
+import ToolTip from './Tooltip';
 
 export interface StackValue {
   value: number;
@@ -27,6 +25,7 @@ export interface BarData {
 export interface BarChartStyle extends CommonStyles {
   width?: number;
   height?: number;
+  barWidth?: number;
 }
 
 export interface BarChartProps {
@@ -38,25 +37,27 @@ export interface BarChartProps {
 }
 
 function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
-  console.log(React.version, "BarChart");
   const { maxValueCalculated } = useMemo(() => {
-    if (isDefined(maxValue) && isDefined(minValue)) {
+    if (isDefined(maxValue)) {
       return {
         maxValueCalculated: maxValue,
       };
     }
 
     if (data.length === 0) {
-      return { maxValueCalculated: 100, steps: arrayFrom(100, 20) };
+      return { maxValueCalculated: 100 };
     }
     let maxValueCalculated = Number.MIN_VALUE;
 
     data.forEach((item) => {
-      const currentValue = item.values.reduce((acc, value) => acc + value.value, 0);
+      const currentValue = item.values.reduce(
+        (acc, value) => acc + value.value,
+        0
+      );
       maxValueCalculated = Math.max(maxValueCalculated, currentValue);
     });
 
-    return { maxValueCalculated, steps };
+    return { maxValueCalculated };
   }, [data, maxValue]);
 
   const { width: windowWidth } = useWindowDimensions();
@@ -74,17 +75,24 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
   const chartWidth = useMemo(() => {
     if (isDefined(style?.width)) return style.width;
 
-    return chartBarSpacing * data.length + data.length * chartBarWidth + ySpace + paddingRight + paddingLeft;
+    return (
+      chartBarSpacing * data.length +
+      data.length * chartBarWidth +
+      ySpace +
+      paddingRight +
+      paddingLeft
+    );
   }, [style?.width, windowWidth]);
 
   const onCanvasTouchStart = (event: GestureResponderEvent) => {
     let leftExtraXSpace = paddingLeft + ySpace + strokeWidth;
     let xIndex = event.nativeEvent.locationX - leftExtraXSpace;
     xIndex = Math.floor(xIndex / (chartBarWidth + chartBarSpacing));
-    let startingXIndex = xIndex * (chartBarWidth + chartBarSpacing) + leftExtraXSpace;
+    let startingXIndex =
+      xIndex * (chartBarWidth + chartBarSpacing) + leftExtraXSpace;
 
     if (startingXIndex + chartBarWidth < event.nativeEvent.locationX) {
-      console.log("Touch is outside the bar width, ignoring.");
+      console.log('Touch is outside the bar width, ignoring.');
       setTooltip(undefined);
       return;
     }
@@ -92,11 +100,18 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
     let yIndex = 0;
     let yPassed = 0;
     let categoryData = data[xIndex]?.values || [];
+    let lastBarHeight = 0;
 
-    while (yIndex < categoryData.length && yPassed < chartHeight - event.nativeEvent.locationY + paddingTop) {
+    while (
+      yIndex < categoryData.length &&
+      yPassed < chartHeight - event.nativeEvent.locationY + paddingTop
+    ) {
       const barHeight =
-        ((categoryData[yIndex]!.value - minValueCalculated) / (maxValueCalculated - minValueCalculated)) * chartHeight;
+        ((categoryData[yIndex]!.value - minValueCalculated) /
+          (maxValueCalculated - minValueCalculated)) *
+        chartHeight;
       yPassed += barHeight;
+      lastBarHeight = barHeight;
       yIndex++;
     }
 
@@ -104,11 +119,13 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
       setTooltip(undefined);
       return;
     }
+    console.log('Last bar height:', lastBarHeight, 'Y passed:', yPassed);
 
     setTooltip({
-      x: startingXIndex,
-      y: chartHeight - yPassed - paddingTop,
-      label: categoryData[yIndex - 1]!.label || " :u ",
+      centerX: startingXIndex + chartBarWidth / 2,
+      centerY:
+        chartHeight - yPassed - paddingTop + strokeWidth + lastBarHeight / 2,
+      label: categoryData[yIndex - 1]!.label || ' :u ',
     });
   };
 
@@ -121,7 +138,11 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
   return (
     <ScrollView horizontal onScroll={() => setTooltip(undefined)}>
       <Canvas
-        style={{ width: chartWidth, height: chartHeight + paddingBottom + paddingTop, backgroundColor: "black" }}
+        style={{
+          width: chartWidth,
+          height: chartHeight + paddingBottom + paddingTop,
+          backgroundColor: 'black',
+        }}
         onTouchStart={onCanvasTouchStart}
       >
         {/* X axis */}
@@ -151,21 +172,38 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
         ))}
         {data.map((bar, xIndex) => {
           let previousHeight = 0;
-          const x = xIndex * (chartBarWidth + chartBarSpacing) + ySpace + strokeWidth + paddingLeft;
+          const x =
+            xIndex * (chartBarWidth + chartBarSpacing) +
+            ySpace +
+            strokeWidth +
+            paddingLeft;
           return (
             <Fragment key={xIndex}>
-              <Text x={x} y={chartHeight + paddingTop + 20} text={bar.label} color="white" font={font} />
+              <Text
+                x={x}
+                y={chartHeight + paddingTop + 20}
+                text={bar.label}
+                color="white"
+                font={font}
+              />
               {bar.values.map((item, yIndex) => {
                 const barHeight =
-                  ((item.value - minValueCalculated) / (maxValueCalculated - minValueCalculated)) * chartHeight;
+                  ((item.value - minValueCalculated) /
+                    (maxValueCalculated - minValueCalculated)) *
+                  chartHeight;
 
-                const y = chartHeight - barHeight - previousHeight + paddingTop - strokeWidth;
-                let color = colors?.[item.id ?? item.label] || "#4A90E2";
+                const y =
+                  chartHeight -
+                  barHeight -
+                  previousHeight +
+                  paddingTop -
+                  strokeWidth;
+                let color = colors?.[item.id ?? item.label] || '#4A90E2';
 
                 previousHeight += barHeight;
                 return (
                   <Rect
-                    key={xIndex + "-" + yIndex}
+                    key={xIndex + '-' + yIndex}
                     x={x}
                     y={y}
                     width={chartBarWidth}

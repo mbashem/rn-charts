@@ -2,7 +2,6 @@ import { listFontFamilies, matchFont, Skia, TextAlign, type SkFont, type SkParag
 import { Platform } from "react-native";
 
 export interface CommonStyles {
-	barWidth?: number;
 	spacing?: number;
 	padding?: number;
 	paddingTop?: number;

@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+export declare function arrayFrom(maxValue: number, interval: number): number[];
 export declare const stringToArray: (s: string, separator: string) => string[];
 export declare const increment: (char: string, by: number) => string;
 export declare const getRandomInteger: (min: number, max: number) => number;
