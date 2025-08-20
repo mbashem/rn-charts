@@ -8,6 +8,7 @@ export interface CommonStyles {
 	paddingBottom?: number;
 	paddingLeft?: number;
 	paddingRight?: number;
+	backgroundColor?: string;
 }
 
 export function getRandomRGBColor() {

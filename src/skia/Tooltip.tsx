@@ -1,14 +1,23 @@
 import { Group, RoundedRect, Text } from '@shopify/react-native-skia';
 import { font } from './common';
 
+export interface ToolTipStyles {
+  padding?: number;
+}
+
 export interface TooltipData {
   centerX: number;
   centerY: number;
   label: string;
 }
 
-export default function ToolTip({ data }: { data: TooltipData | undefined }) {
-  const padding = 5;
+interface ToolTipProps {
+  data: TooltipData | undefined;
+  styles?: ToolTipStyles;
+}
+
+export default function ToolTip({ data, styles }: ToolTipProps) {
+  const padding = styles?.padding ?? 5;
 
   if (!data) return null;
   const { width: textWidth, height: textHeight } = font.measureText(data.label);
@@ -18,7 +27,7 @@ export default function ToolTip({ data }: { data: TooltipData | undefined }) {
   const { centerX, centerY, label } = data;
 
   const tooltipX = centerX - width / 2;
-  const tooltipY = centerY + padding;
+  const tooltipY = centerY - height / 2;
 
   return (
     <Group>
@@ -33,7 +42,7 @@ export default function ToolTip({ data }: { data: TooltipData | undefined }) {
       />
       <Text
         x={tooltipX + padding}
-        y={tooltipY + height / 2 + padding}
+        y={tooltipY + height - padding}
         text={label}
         color="white"
         font={font}

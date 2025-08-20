@@ -1,6 +1,6 @@
 // PieChart.tsx
-import { Canvas, Path, Skia, Text } from '@shopify/react-native-skia';
-import { type CommonStyles, font, getRandomRGBColor } from './common';
+import { Canvas, Path, rect, Skia } from '@shopify/react-native-skia';
+import { type CommonStyles, getRandomRGBColor } from './common';
 import { View, type GestureResponderEvent } from 'react-native';
 import type { TooltipData } from './Tooltip';
 import { useState } from 'react';
@@ -13,7 +13,7 @@ type PieSlice = {
 };
 
 interface PieChartStyles extends CommonStyles {
-  diameter?: number;
+  radius?: number;
   innerRadius?: number;
   innerColor?: string;
 }
@@ -21,40 +21,62 @@ interface PieChartStyles extends CommonStyles {
 export type PieChartProps = {
   slices: PieSlice[];
   styles: PieChartStyles;
+  centerView?: React.ReactNode;
+  onSliceTouch?: (slice: PieSlice | undefined) => void;
+  showTooltipOnTouch?: boolean;
 };
+
+function deegreesToRadians(degrees: number): number {
+  return (degrees * Math.PI) / 180;
+}
+
+function ypoint(angle: number, radius: number, cy: number): number {
+  return cy - radius * Math.sin(deegreesToRadians(angle));
+}
+
+function xpoint(angle: number, radius: number, cx: number): number {
+  return cx - radius * Math.cos(deegreesToRadians(angle));
+}
 
 function getCircularPoints(
   startAngle: number,
   radius: number,
   angle: number,
   cx: number,
-  cy: number,
-  diameter: number
+  cy: number
 ): [number, number, number, number] {
-  const startRad = (Math.PI / 180) * startAngle;
-  const endRad = (Math.PI / 180) * (startAngle + angle);
+  let x1 = xpoint(startAngle, radius, cx);
+  let y1 = ypoint(startAngle, radius, cy);
+  let x2 = xpoint(startAngle + angle, radius, cx);
+  let y2 = ypoint(startAngle + angle, radius, cy);
 
-  let x1 = cx + radius * Math.cos(startRad);
-  let y1 = cy + radius * Math.sin(startRad);
-  let x2 = cx + radius * Math.cos(endRad);
-  let y2 = cy + radius * Math.sin(endRad);
-
-  return [diameter - x1, diameter - y1, diameter - x2, diameter - y2];
+  return [x1, y1, x2, y2];
 }
 
-function PieChart({ slices, styles }: PieChartProps) {
+function PieChart({
+  slices,
+  styles,
+  onSliceTouch,
+  centerView,
+  showTooltipOnTouch,
+}: PieChartProps) {
   const [tooltip, setTooltip] = useState<TooltipData | undefined>(undefined);
 
-  const diameter = styles.diameter ?? 300;
+  const diameter = (styles.radius ?? 150) * 2;
+  const innerRadius = styles.innerRadius ?? 100;
   const radius = diameter / 2;
   const cx = radius;
   const cy = radius;
+  const paddingTop = styles.paddingTop ?? styles.padding ?? 0;
+  const paddingBottom = styles.paddingBottom ?? styles.padding ?? 0;
+  const paddingLeft = styles.paddingLeft ?? styles.padding ?? 0;
+  const paddingRight = styles.paddingRight ?? styles.padding ?? 0;
 
   const total = slices.reduce((sum, slice) => sum + slice.value, 0);
 
   let startAngle = 0;
 
-  const paths = slices.map(({ value, color }) => {
+  const paths = slices.map(({ value, color }, index) => {
     const sweepAngle = (value / total) * 360;
 
     let [x1, y1, x2, y2] = getCircularPoints(
@@ -62,33 +84,33 @@ function PieChart({ slices, styles }: PieChartProps) {
       radius,
       sweepAngle,
       cx,
-      cy,
-      diameter
+      cy
     );
     let [cx1, cy1, cx2, cy2] = getCircularPoints(
       startAngle,
-      styles.innerRadius ?? 0,
+      innerRadius,
       sweepAngle,
       cx,
-      cy,
-      diameter
+      cy
     );
-
-    console.log('x1, y1, x2, y2:', x1, y1, x2, y2);
-    console.log('cx1, cy1, cx2, cy2:', cx1, cy1, cx2, cy2);
 
     const path = Skia.Path.Make();
     path.moveTo(cx1, cy1);
     path.lineTo(x1, y1);
     path.arcToRotated(cx, cy, sweepAngle, sweepAngle < 180, false, x2, y2);
     path.lineTo(cx2, cy2);
-    // path.arcToRotated(cx, cy, sweepAngle, sweepAngle < 180, false, cx1!, cy2!);
 
-    // path.moveTo(cx, cy);
-    // path.lineTo(cx1, cy1);
-    // path.arcToRotated(cx, cy, sweepAngle, sweepAngle < 180, false, cx2, cy2);
-    // path.lineTo(cx, cy);
-    // path.close();
+    path.addArc(
+      rect(
+        cx - innerRadius,
+        cy - innerRadius,
+        innerRadius * 2,
+        innerRadius * 2
+      ),
+      startAngle + 180 + sweepAngle,
+      -sweepAngle
+    );
+    path.close();
 
     startAngle += sweepAngle;
 
@@ -96,49 +118,93 @@ function PieChart({ slices, styles }: PieChartProps) {
   });
 
   const onCanvasTouchStart = (event: GestureResponderEvent) => {
+    if (!showTooltipOnTouch && !onSliceTouch) {
+      return;
+    }
     const { locationX, locationY } = event.nativeEvent;
     console.log('Touch at:', locationX, locationY);
     let foundPath = false;
+    let angles = 0;
 
     paths.forEach(({ path }, index) => {
+      let slice = slices[index];
+      if (!slice) return;
+
+      let lastAngle = (slice.value / total) * 360;
       if (path.contains(locationX, locationY)) {
-        const label = slices[index]!.label || 'Slice';
-        const bounds = path.getBounds();
-        const centerX = bounds.x + bounds.width / 2;
-        const centerY = bounds.y + bounds.height / 2;
-        console.log('Bounds: ', bounds);
-        console.log('Slice touched:', label, ' at', centerX, centerY);
-        setTooltip({
-          centerX: centerX,
-          centerY: centerY,
-          label: label,
-        });
+        const label = slice.label || 'Slice';
+
+        const outerX = xpoint(angles + lastAngle / 2, radius, cx);
+        const innerX = xpoint(angles + lastAngle / 2, innerRadius, cx);
+
+        const outerY = ypoint(angles + lastAngle / 2, radius, cy);
+        const innerY = ypoint(angles + lastAngle / 2, innerRadius, cy);
+
+        const centerY = (outerY + innerY) / 2;
+        const centerX = (outerX + innerX) / 2;
+
+        onSliceTouch?.(slice);
+        if (showTooltipOnTouch ?? true) {
+          setTooltip({
+            centerX: centerX,
+            centerY: centerY,
+            label: label,
+          });
+        }
+
         foundPath = true;
         return;
       }
+
+      angles += lastAngle;
     });
 
     if (!foundPath) {
       console.log('No slice found at touch location');
+      onSliceTouch?.(undefined);
       setTooltip(undefined);
     }
   };
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
+    <View
+      style={{
+        paddingTop: paddingTop,
+        paddingBottom: paddingBottom,
+        paddingRight: paddingRight,
+        paddingLeft: paddingLeft,
+        backgroundColor: styles.backgroundColor ?? 'transparent',
+      }}
+    >
+      {centerView && (
+        <View
+          style={{
+            position: 'absolute',
+            top: paddingTop + radius - innerRadius,
+            left: paddingLeft + radius - innerRadius,
+            width: innerRadius * 2,
+            height: innerRadius * 2,
+            borderRadius: innerRadius,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: styles.innerColor ?? 'black',
+          }}
+        >
+          {centerView}
+        </View>
+      )}
       <Canvas
         style={{
-          width: styles.diameter,
-          height: styles.diameter,
-          backgroundColor: 'gray',
+          width: diameter,
+          height: diameter,
+          backgroundColor: styles.backgroundColor ?? 'transparent',
         }}
         onTouchStart={onCanvasTouchStart}
       >
         {paths.map(({ path, color }, index) => (
-          <Path key={index} path={path} color={color} />
+          <Path key={index} path={path} color={color} stroke={{ width: 5 }} />
         ))}
-        <Text x={radius} y={radius} text={'F'} color="white" font={font} />
-        <ToolTip data={tooltip} />
+        <ToolTip data={tooltip} styles={{ padding: 5 }} />
       </Canvas>
     </View>
   );
