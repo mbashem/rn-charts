@@ -1,4 +1,4 @@
-import { type CommonStyles } from "./common";
+import { type CommonStyles } from "../common";
 export interface StackValue {
     value: number;
     label: string;

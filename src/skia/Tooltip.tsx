@@ -13,11 +13,11 @@ export interface TooltipData {
 
 interface ToolTipProps {
   data: TooltipData | undefined;
-  styles?: ToolTipStyles;
+  style?: ToolTipStyles;
 }
 
-export default function ToolTip({ data, styles }: ToolTipProps) {
-  const padding = styles?.padding ?? 5;
+export default function ToolTip({ data, style }: ToolTipProps) {
+  const padding = style?.padding ?? 5;
 
   if (!data) return null;
   const { width: textWidth, height: textHeight } = font.measureText(data.label);

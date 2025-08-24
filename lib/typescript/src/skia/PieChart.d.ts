@@ -1,4 +1,4 @@
-import { type CommonStyles } from './common';
+import { type CommonStyles } from '../common';
 type PieSlice = {
     value: number;
     color?: string;
