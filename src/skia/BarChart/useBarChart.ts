@@ -11,30 +11,39 @@ export default function useBarChart(
 	maxValue?: number,
 	minValue?: number
 ) {
-	const { maxValueCalculated } = useMemo(() => {
-		if (isDefined(maxValue)) {
+	const { maxValueCalculated, minValueCalculated } = useMemo(() => {
+		if (isDefined(maxValue) && isDefined(minValue)) {
 			return {
 				maxValueCalculated: maxValue,
+				minValueCalculated: minValue
 			};
 		}
 
 		if (data.length === 0) {
-			return { maxValueCalculated: 100 };
+			return { maxValueCalculated: maxValue ?? 100, minValueCalculated: minValue ?? 0 };
 		}
 		let maxValueCalculated = Number.MIN_VALUE;
+		let minValueCalculated = Number.MAX_VALUE;
 
 		data.forEach((item) => {
 			const currentValue = item.values.reduce(
-				(acc, value) => acc + value.value,
+				(acc, value) => {
+					minValueCalculated = Math.min(minValueCalculated, value.value);
+					return acc + value.value;
+				},
 				0
 			);
 			maxValueCalculated = Math.max(maxValueCalculated, currentValue);
 		});
+		if (isDefined(maxValue))
+			maxValueCalculated = maxValue;
 
-		return { maxValueCalculated };
+		if (isDefined(minValue))
+			minValueCalculated = minValue;
+
+		return { maxValueCalculated, minValueCalculated };
 	}, [data, maxValue]);
 
-	const minValueCalculated = minValue ?? 0;
 	const steps = useMemo(() => arrayFrom(1, 0.2), []);
 	const [tooltip, setTooltip] = useState<TooltipData | undefined>(undefined);
 
@@ -47,6 +56,7 @@ export default function useBarChart(
 	const paddingBottom = 30;
 	const paddingTop = 10;
 	const strokeWidth = 2;
+	const canvasHeight = chartHeight + paddingTop + paddingBottom;
 
 	const chartWidth = useMemo(() => {
 		if (isDefined(style?.width)) return style.width;
@@ -128,6 +138,7 @@ export default function useBarChart(
 	return {
 		maxValueCalculated,
 		minValueCalculated,
+		canvasHeight,
 		steps,
 		chartWidth,
 		chartHeight,

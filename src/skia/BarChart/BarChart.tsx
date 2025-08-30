@@ -6,6 +6,7 @@ import { getFormattedString } from '../../util/util';
 import { font, type CommonStyles } from '../common';
 import ToolTip from '../Tooltip';
 import useBarChart from './useBarChart';
+import VerticalLabel from '../Common/VerticalLabel';
 
 export interface StackValue {
   value: number;
@@ -35,7 +36,8 @@ export interface BarChartProps {
 function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
   const {
     maxValueCalculated,
-    steps,
+    minValueCalculated,
+    canvasHeight,
     paddingRight,
     paddingLeft,
     paddingBottom,
@@ -54,29 +56,19 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
 
   return (
     <>
-      <Canvas
-        style={{
+      <VerticalLabel
+        maxValue={maxValueCalculated}
+        minValue={minValueCalculated}
+        labelCount={6}
+        styles={{
           width: verticalLabelSpace,
-          backgroundColor: style?.backgroundColor,
+          height: canvasHeight,
+          paddingTop,
+          paddingBottom,
+          paddingLeft,
+          strokeWidth,
         }}
-      >
-        {steps.map((value, index) => (
-          <Text
-            key={index}
-            x={paddingLeft}
-            y={chartHeight - value * chartHeight + xSpace}
-            text={getFormattedString(value * maxValueCalculated).toString()}
-            color="white"
-            font={font}
-          />
-        ))}
-        <Line
-          p1={vec(verticalLabelSpace, paddingTop)}
-          p2={vec(verticalLabelSpace, chartHeight + paddingTop)}
-          color="white"
-          strokeWidth={strokeWidth}
-        />
-      </Canvas>
+      />
       <ScrollView
         bounces={false}
         overScrollMode="never"

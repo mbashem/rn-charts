@@ -24,13 +24,13 @@ export const systemFontFamilies = Platform.select({
 	default: ["sans-serif", "serif"],
 });
 
-function getFont(): SkFont {
+export function getFont(size: number = 14): SkFont {
 	const fontFamily = systemFontFamilies[0];
 	console.log("Available system font families:", listFontFamilies());
 	console.log("Using font family:", fontFamily, systemFontFamilies);
 	const font = matchFont({
 		fontFamily,
-		fontSize: 14,
+		fontSize: size,
 		fontStyle: "normal",
 		fontWeight: "normal",
 	});
