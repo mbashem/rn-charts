@@ -1,5 +1,5 @@
 import { Canvas, Path } from '@shopify/react-native-skia';
-import { type CommonStyles } from '../common';
+import { type CommonStyle } from '../common';
 import { View } from 'react-native';
 import ToolTip from '../Tooltip';
 import { usePieChart, type PieSlice } from './usePieChart';
@@ -12,7 +12,7 @@ export type PieChartProps = {
   showTooltipOnTouch?: boolean;
 };
 
-export interface PieChartStyles extends CommonStyles {
+export interface PieChartStyles extends CommonStyle {
   radius?: number;
   innerRadius?: number;
   innerColor?: string;

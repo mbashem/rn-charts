@@ -1,9 +1,8 @@
 import { Fragment } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { Canvas, Rect, Text, vec, Line } from '@shopify/react-native-skia';
-import { getFormattedString } from '../../util/util';
-import { font, type CommonStyles } from '../common';
+import { type CommonStyle } from '../common';
 import ToolTip from '../Tooltip';
 import useBarChart from './useBarChart';
 import VerticalLabel from '../Common/VerticalLabel';
@@ -19,10 +18,12 @@ export interface BarData {
   label: string;
 }
 
-export interface BarChartStyle extends CommonStyles {
+export interface BarChartStyle extends CommonStyle {
   width?: number;
   height?: number;
   barWidth?: number;
+  barSpacing?: number;
+  fontSize?: number;
 }
 
 export interface BarChartProps {
@@ -43,29 +44,38 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
     paddingBottom,
     paddingTop,
     rectangles,
-    verticalLabelSpace,
+    verticalLabelWidth,
     chartHeight,
     chartWidth,
     strokeWidth,
     tooltip,
+    bottomLabelHeight,
+    fontSize,
+    font,
     setTooltip,
     onCanvasTouchStart,
   } = useBarChart(data, style, maxValue, minValue);
-
-  const xSpace = paddingTop + 5;
+  console.log('Padding right', paddingRight, ": width", style?.width);
 
   return (
-    <>
+    <View
+      style={{
+        width: style?.width,
+        flexDirection: 'row',
+        backgroundColor: style?.backgroundColor,
+        paddingLeft: paddingLeft,
+        paddingRight: paddingRight,
+        paddingTop: paddingTop,
+        paddingBottom: paddingBottom,
+      }}
+    >
       <VerticalLabel
         maxValue={maxValueCalculated}
         minValue={minValueCalculated}
         labelCount={6}
         styles={{
-          width: verticalLabelSpace,
-          height: canvasHeight,
-          paddingTop,
-          paddingBottom,
-          paddingLeft,
+          width: verticalLabelWidth,
+          height: chartHeight,
           strokeWidth,
         }}
       />
@@ -78,21 +88,15 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
         <Canvas
           style={{
             width: chartWidth,
-            height: chartHeight + paddingBottom + paddingTop,
-            backgroundColor: style?.backgroundColor,
+            height: canvasHeight,
+            paddingRight: 50
           }}
           onTouchStart={onCanvasTouchStart}
         >
           {/* X axis */}
           <Line
-            p1={vec(0, chartHeight + paddingTop)}
-            p2={vec(chartWidth - paddingRight, chartHeight + paddingTop)}
-            color="white"
-            strokeWidth={strokeWidth}
-          />
-          <Line
-            p1={vec(0, paddingTop)}
-            p2={vec(0, chartHeight + paddingTop)}
+            p1={vec(0, chartHeight)}
+            p2={vec(chartWidth, chartHeight)}
             color="white"
             strokeWidth={strokeWidth}
           />
@@ -105,7 +109,9 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
               <Fragment key={xIndex}>
                 <Text
                   x={bar[0]!.x}
-                  y={chartHeight + paddingTop + 20}
+                  y={
+                    chartHeight + fontSize + (bottomLabelHeight - fontSize) / 2
+                  }
                   text={data[xIndex]!.label}
                   color="white"
                   font={font}
@@ -131,7 +137,7 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
           <ToolTip data={tooltip} />
         </Canvas>
       </ScrollView>
-    </>
+    </View>
   );
 }
 

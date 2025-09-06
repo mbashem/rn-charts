@@ -4,6 +4,7 @@ import { arrayFrom, isDefined } from "../../util/util";
 import type { BarData, BarChartStyle } from "./BarChart";
 import type { TooltipData } from "../Tooltip";
 import { type GestureResponderEvent } from "react-native";
+import { getFont } from "../common";
 
 export default function useBarChart(
 	data: BarData[],
@@ -47,22 +48,21 @@ export default function useBarChart(
 	const steps = useMemo(() => arrayFrom(1, 0.2), []);
 	const [tooltip, setTooltip] = useState<TooltipData | undefined>(undefined);
 
-	const paddingRight = style?.paddingRight ?? style?.padding ?? 10;
-	const paddingLeft = style?.paddingLeft ?? style?.padding ?? 10;
+	const paddingRight = style?.paddingRight ?? style?.padding ?? 0;
+	const paddingLeft = style?.paddingLeft ?? style?.padding ?? 0;
 	const chartBarWidth = style?.barWidth ?? 100;
-	const chartBarSpacing = style?.spacing ?? 20;
-	const verticalLabelSpace = 40;
+	const chartBarSpacing = style?.barSpacing ?? 0;
+	const verticalLabelWidth = 35;
 	const chartHeight = style?.height ?? 200;
-	const paddingBottom = 30;
-	const paddingTop = 10;
+	const paddingBottom = style?.paddingBottom ?? style?.padding ?? 0;
+	const paddingTop = style?.paddingTop ?? style?.padding ?? 0;
 	const strokeWidth = 2;
-	const canvasHeight = chartHeight + paddingTop + paddingBottom;
+	const bottomLabelHeight = 20;
+	const canvasHeight = chartHeight + bottomLabelHeight;
+	const fontSize = style?.fontSize ?? 12;
+	const font = getFont(fontSize);
 
-	const chartWidth = useMemo(() => {
-		if (isDefined(style?.width)) return style.width;
-
-		return chartBarSpacing * data.length + data.length * chartBarWidth + paddingRight;
-	}, [style?.width, data.length, chartBarSpacing, chartBarWidth, paddingRight]);
+	const chartWidth = chartBarSpacing * data.length + data.length * chartBarWidth;
 
 	const rectangles = useMemo(() => {
 		return data.map((bar, xIndex) => {
@@ -75,7 +75,7 @@ export default function useBarChart(
 					chartHeight;
 
 				const y =
-					chartHeight - barHeight - previousHeight + paddingTop - strokeWidth;
+					chartHeight - barHeight - previousHeight - strokeWidth;
 
 				previousHeight += barHeight;
 				return rect(x, y, chartBarWidth, barHeight);
@@ -87,7 +87,6 @@ export default function useBarChart(
 		chartBarSpacing,
 		maxValueCalculated,
 		minValueCalculated,
-		paddingTop,
 		strokeWidth,
 	]);
 
@@ -111,7 +110,7 @@ export default function useBarChart(
 
 		while (
 			yIndex < categoryData.length &&
-			yPassed < chartHeight - event.nativeEvent.locationY + paddingTop
+			yPassed < chartHeight - event.nativeEvent.locationY
 		) {
 			const barHeight =
 				((categoryData[yIndex]!.value - minValueCalculated) /
@@ -130,7 +129,7 @@ export default function useBarChart(
 		setTooltip({
 			centerX: startingXIndex + chartBarWidth / 2,
 			centerY:
-				chartHeight - yPassed + paddingTop - strokeWidth + lastBarHeight / 2,
+				chartHeight - yPassed - strokeWidth + lastBarHeight / 2,
 			label: categoryData[yIndex - 1]!.label || ' :u ',
 		});
 	};
@@ -146,12 +145,15 @@ export default function useBarChart(
 		paddingBottom,
 		paddingLeft,
 		paddingRight,
-		verticalLabelSpace,
+		verticalLabelWidth,
 		chartBarWidth,
 		chartBarSpacing,
 		strokeWidth,
 		rectangles,
 		tooltip,
+		bottomLabelHeight,
+		fontSize,
+		font,
 		setTooltip,
 		onCanvasTouchStart
 	};

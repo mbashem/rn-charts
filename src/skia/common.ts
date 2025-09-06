@@ -1,14 +1,16 @@
 import { listFontFamilies, matchFont, Skia, TextAlign, type SkFont, type SkParagraph, type SkTextStyle } from "@shopify/react-native-skia";
 import { Platform } from "react-native";
 
-export interface CommonStyles {
-	spacing?: number;
+export interface CommonStyle {
 	padding?: number;
 	paddingTop?: number;
 	paddingBottom?: number;
+	paddingStart?: number;
+	paddingEnd?: number;
 	paddingLeft?: number;
 	paddingRight?: number;
 	backgroundColor?: string;
+	disableRTL?: boolean;
 }
 
 export function getRandomRGBColor() {
@@ -40,15 +42,15 @@ export function getFont(size: number = 14): SkFont {
 export const font = getFont();
 
 function createParagraph(text: string): SkParagraph {
-  const paragraphStyle = {
-    textAlign: TextAlign.Center,
-  };
+	const paragraphStyle = {
+		textAlign: TextAlign.Center,
+	};
 
-  const fontStyle: SkTextStyle = {
-    fontFamilies: systemFontFamilies,
-    fontSize: 14,
-  };
-  const paragraph = Skia.ParagraphBuilder.Make(paragraphStyle).pushStyle(fontStyle).addText(text).pop().build();
+	const fontStyle: SkTextStyle = {
+		fontFamilies: systemFontFamilies,
+		fontSize: 14,
+	};
+	const paragraph = Skia.ParagraphBuilder.Make(paragraphStyle).pushStyle(fontStyle).addText(text).pop().build();
 
-  return paragraph;
+	return paragraph;
 }

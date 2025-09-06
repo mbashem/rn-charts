@@ -6,9 +6,9 @@ import {
   Rect,
   RoundedRect,
 } from '@shopify/react-native-skia';
-import type { CommonStyles } from '../common';
+import type { CommonStyle } from '../common';
 
-export interface LinearProgressStyles extends CommonStyles {
+export interface LinearProgressStyles extends CommonStyle {
   width?: number;
   height?: number;
   radius?: number;
