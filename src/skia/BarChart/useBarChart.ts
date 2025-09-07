@@ -4,7 +4,7 @@ import { arrayFrom, isDefined } from "../../util/util";
 import type { BarData, BarChartStyle } from "./BarChart";
 import type { TooltipData } from "../Tooltip";
 import { type GestureResponderEvent } from "react-native";
-import { getFont } from "../common";
+import { getFont, getPaddings } from "../common";
 
 export default function useBarChart(
 	data: BarData[],
@@ -48,14 +48,17 @@ export default function useBarChart(
 	const steps = useMemo(() => arrayFrom(1, 0.2), []);
 	const [tooltip, setTooltip] = useState<TooltipData | undefined>(undefined);
 
-	const paddingRight = style?.paddingRight ?? style?.padding ?? 0;
-	const paddingLeft = style?.paddingLeft ?? style?.padding ?? 0;
+	const {
+		paddingLeft,
+		paddingRight,
+		paddingTop,
+		paddingBottom
+	} = getPaddings(style);
+
 	const chartBarWidth = style?.barWidth ?? 100;
 	const chartBarSpacing = style?.barSpacing ?? 0;
 	const verticalLabelWidth = 35;
 	const chartHeight = style?.height ?? 200;
-	const paddingBottom = style?.paddingBottom ?? style?.padding ?? 0;
-	const paddingTop = style?.paddingTop ?? style?.padding ?? 0;
 	const strokeWidth = 2;
 	const bottomLabelHeight = 20;
 	const canvasHeight = chartHeight + bottomLabelHeight;

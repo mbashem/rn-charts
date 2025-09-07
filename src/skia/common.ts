@@ -13,6 +13,24 @@ export interface CommonStyle {
 	disableRTL?: boolean;
 }
 
+export function getPaddings(style?: CommonStyle) {
+	const paddingTop = style?.paddingTop ?? style?.padding ?? 0;
+	const paddingBottom = style?.paddingBottom ?? style?.padding ?? 0;
+	const paddingLeft = style?.paddingLeft ?? style?.paddingStart ?? style?.padding ?? 0;
+	const paddingRight = style?.paddingRight ?? style?.paddingEnd ?? style?.padding ?? 0;
+	const paddingHorizontal = paddingLeft + paddingRight;
+	const paddingVertical = paddingTop + paddingBottom;
+
+	return {
+		paddingTop,
+		paddingBottom,
+		paddingLeft,
+		paddingRight,
+		paddingHorizontal,
+		paddingVertical
+	};
+}
+
 export function getRandomRGBColor() {
 	const r = Math.floor(Math.random() * 256);
 	const g = Math.floor(Math.random() * 256);
