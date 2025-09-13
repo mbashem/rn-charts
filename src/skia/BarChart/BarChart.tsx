@@ -55,7 +55,6 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
     setTooltip,
     onCanvasTouchStart,
   } = useBarChart(data, style, maxValue, minValue);
-  console.log('Padding right', paddingRight, ": width", style?.width);
 
   return (
     <View
@@ -83,7 +82,7 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
         bounces={false}
         overScrollMode="never"
         horizontal
-        onScroll={() => setTooltip(undefined)}
+        onScroll={(event) => setTooltip(undefined)}
       >
         <Canvas
           style={{

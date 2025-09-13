@@ -71,7 +71,6 @@ function useAreaChart(
 		for (let datum of data) {
 			const areaData = datum.values;
 			const stepX = width / areaData.length;
-			console.log(width, areaData.length);
 
 			const p = Skia.Path.Make();
 
@@ -79,7 +78,7 @@ function useAreaChart(
 
 			areaData.forEach((y, i) => {
 				const xPos = i * stepX;
-				const yPos = areaCanvasHeight - ((y - minValueCalculated) / maxValueCalculated) * areaCanvasHeight;
+				const yPos = areaCanvasHeight - ((y - minValueCalculated) / (maxValueCalculated - minValueCalculated)) * areaCanvasHeight;
 				p.lineTo(xPos, Math.max(0, yPos));
 			});
 

@@ -77,7 +77,16 @@ export function usePieChart(
 		const path = Skia.Path.Make();
 		path.moveTo(cx1, cy1);
 		path.lineTo(x1, y1);
-		path.arcToRotated(cx, cy, sweepAngle, sweepAngle < 180, false, x2, y2);
+		path.addArc(
+			rect(
+				cx - radius,
+				cy - radius,
+				radius * 2,
+				radius * 2
+			),
+			startAngle + 180,
+			sweepAngle
+		);
 		path.lineTo(cx2, cy2);
 
 		path.addArc(
@@ -90,6 +99,7 @@ export function usePieChart(
 			startAngle + 180 + sweepAngle,
 			-sweepAngle
 		);
+		path.lineTo(x1, y1);
 		path.close();
 
 		startAngle += sweepAngle;
@@ -102,7 +112,6 @@ export function usePieChart(
 			return;
 		}
 		const { locationX, locationY } = event.nativeEvent;
-		console.log('Touch at:', locationX, locationY);
 		let foundPath = false;
 		let angles = 0;
 

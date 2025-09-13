@@ -40,12 +40,7 @@ export default function LinearProgress({
   }, []);
 
   return (
-    <View
-      onLayout={(event) => {
-        const { width, height } = event.nativeEvent.layout;
-        console.log('Layout width, height:', width, height);
-      }}
-    >
+    <View>
       <Canvas style={{ width, height }}>
         {/* Background bar */}
         <RoundedRect

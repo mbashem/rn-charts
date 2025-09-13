@@ -137,6 +137,10 @@ export default function useBarChart(
 		});
 	};
 
+	function onScroll(event: any) { 
+		setTooltip(undefined);
+	}
+
 	return {
 		maxValueCalculated,
 		minValueCalculated,
@@ -158,6 +162,7 @@ export default function useBarChart(
 		fontSize,
 		font,
 		setTooltip,
-		onCanvasTouchStart
+		onCanvasTouchStart,
+		onScroll
 	};
 }
