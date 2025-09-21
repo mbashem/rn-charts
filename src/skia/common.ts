@@ -11,6 +11,14 @@ export interface CommonStyle {
 	paddingRight?: number;
 	backgroundColor?: string;
 	disableRTL?: boolean;
+	font?: SkFont;
+	fontSize?: number;
+}
+
+export function getCommonStyleFont(style?: CommonStyle) {
+	const fontSize = style?.font?.getSize() ?? style?.fontSize ?? 12;
+	const font = style?.font ?? getFont(fontSize);
+	return { font, fontSize };
 }
 
 export function getPaddings(style?: CommonStyle) {
@@ -46,8 +54,8 @@ export const systemFontFamilies = Platform.select({
 
 export function getFont(size: number = 14): SkFont {
 	const fontFamily = systemFontFamilies[0];
-	console.log("Available system font families:", listFontFamilies());
-	console.log("Using font family:", fontFamily, systemFontFamilies);
+	// console.log("Available system font families:", listFontFamilies());
+	// console.log("Using font family:", fontFamily, systemFontFamilies);
 	const font = matchFont({
 		fontFamily,
 		fontSize: size,

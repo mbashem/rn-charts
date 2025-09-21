@@ -15,7 +15,6 @@ import useAreaChart, { type AreaData } from './useAreaChart';
 export interface AreaChartStyle extends CommonStyle {
   width: number;
   height: number;
-  fontSize?: number;
 }
 
 interface AreaChartProps {

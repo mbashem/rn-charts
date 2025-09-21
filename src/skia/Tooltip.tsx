@@ -26,9 +26,11 @@ export default function ToolTip({ data, style }: ToolTipProps) {
 
   const { centerX, centerY, label } = data;
 
-  const tooltipX = centerX - width / 2;
-  const tooltipY = centerY - height / 2;
-
+  let tooltipX = centerX - width / 2;
+  let tooltipY = centerY - height / 2;
+  tooltipX = Math.max(0, tooltipX);
+  tooltipY = Math.max(0, tooltipY);
+  
   return (
     <Group>
       <RoundedRect

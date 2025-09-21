@@ -1,5 +1,10 @@
 import { Fragment } from 'react';
 import { ScrollView, View } from 'react-native';
+import {
+  GestureDetector,
+  Gesture,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
 
 import { Canvas, Rect, Text, vec, Line } from '@shopify/react-native-skia';
 import { type CommonStyle } from '../common';
@@ -15,7 +20,7 @@ export interface StackValue {
 
 export interface BarData {
   values: StackValue[];
-  label: string;
+  label?: string;
 }
 
 export interface BarChartStyle extends CommonStyle {
@@ -23,7 +28,6 @@ export interface BarChartStyle extends CommonStyle {
   height?: number;
   barWidth?: number;
   barSpacing?: number;
-  fontSize?: number;
 }
 
 export interface BarChartProps {
@@ -39,6 +43,7 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
     maxValueCalculated,
     minValueCalculated,
     canvasHeight,
+    canvasWidth,
     paddingRight,
     paddingLeft,
     paddingBottom,
@@ -46,97 +51,113 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
     rectangles,
     verticalLabelWidth,
     chartHeight,
-    chartWidth,
+    scrollAreaWidth,
     strokeWidth,
     tooltip,
     bottomLabelHeight,
-    fontSize,
     font,
-    setTooltip,
+    onScroll,
     onCanvasTouchStart,
   } = useBarChart(data, style, maxValue, minValue);
 
+  const dragGesture = Gesture.Pan()
+    .runOnJS(true)
+    .onUpdate((e) => {
+      onScroll(-e.translationX);
+    })
+
   return (
-    <View
-      style={{
-        width: style?.width,
-        flexDirection: 'row',
-        backgroundColor: style?.backgroundColor,
-        paddingLeft: paddingLeft,
-        paddingRight: paddingRight,
-        paddingTop: paddingTop,
-        paddingBottom: paddingBottom,
-      }}
-    >
-      <VerticalLabel
-        maxValue={maxValueCalculated}
-        minValue={minValueCalculated}
-        labelCount={6}
-        styles={{
-          width: verticalLabelWidth,
-          height: chartHeight,
-          strokeWidth,
+    <GestureHandlerRootView>
+      <View
+        style={{
+          width: style?.width,
+          flexDirection: 'row',
+          backgroundColor: style?.backgroundColor,
+          paddingLeft: paddingLeft,
+          paddingRight: paddingRight,
+          paddingTop: paddingTop,
+          paddingBottom: paddingBottom,
         }}
-      />
-      <ScrollView
+      >
+        <VerticalLabel
+          maxValue={maxValueCalculated}
+          minValue={minValueCalculated}
+          labelCount={6}
+          styles={{
+            width: verticalLabelWidth,
+            height: chartHeight,
+            strokeWidth,
+          }}
+        />
+        {/* <ScrollView
         bounces={false}
         overScrollMode="never"
+        contentContainerStyle={{ width: scrollAreaWidth }}
         horizontal
-        onScroll={(event) => setTooltip(undefined)}
-      >
-        <Canvas
-          style={{
-            width: chartWidth,
-            height: canvasHeight,
-            paddingRight: 50
-          }}
-          onTouchStart={onCanvasTouchStart}
-        >
-          {/* X axis */}
-          <Line
-            p1={vec(0, chartHeight)}
-            p2={vec(chartWidth, chartHeight)}
-            color="white"
-            strokeWidth={strokeWidth}
-          />
+        onScroll={onScroll}
+      > */}
+        <GestureDetector gesture={dragGesture}>
+          <Canvas
+            style={{
+              width: canvasWidth,
+              height: canvasHeight,
+              paddingRight: 50,
+              backgroundColor: 'red',
+            }}
+            onTouchStart={onCanvasTouchStart}
+          >
+            {/* X axis */}
+            <Line
+              p1={vec(0, chartHeight)}
+              p2={vec(canvasWidth, chartHeight)}
+              color="white"
+              strokeWidth={strokeWidth}
+            />
 
-          {/* Bars */}
+            {/* Bars */}
 
-          {rectangles.map((bar, xIndex) => {
-            if (bar.length === 0) return null;
-            return (
-              <Fragment key={xIndex}>
-                <Text
-                  x={bar[0]!.x}
-                  y={
-                    chartHeight + fontSize + (bottomLabelHeight - fontSize) / 2
-                  }
-                  text={data[xIndex]!.label}
-                  color="white"
-                  font={font}
-                />
-                {bar.map((item, yIndex) => {
-                  let currentData = data[xIndex]!.values[yIndex]!;
-                  let color =
-                    colors?.[currentData.id ?? currentData.label] || '#4A90E2';
-                  return (
-                    <Rect
-                      key={xIndex + '-' + yIndex}
-                      x={item.x}
-                      y={item.y}
-                      width={item.width}
-                      height={item.height}
-                      color={color}
-                    />
-                  );
-                })}
-              </Fragment>
-            );
-          })}
-          <ToolTip data={tooltip} />
-        </Canvas>
-      </ScrollView>
-    </View>
+            {rectangles.map((bar, xIndex) => {
+              if (bar.bars.length === 0) return null;
+              return (
+                <Fragment key={xIndex}>
+                  <Text
+                    x={bar.bars[0]!.x}
+                    y={
+                      chartHeight +
+                      font.getSize() +
+                      (bottomLabelHeight - font.getSize()) / 2
+                    }
+                    text={bar.label ?? ''}
+                    color="white"
+                    font={font}
+                  />
+                  {bar.bars.map((item, yIndex) => {
+                    let currentData = data[xIndex]!.values[yIndex]!;
+                    let color =
+                      colors?.[currentData.id ?? currentData.label] ||
+                      '#4A90E2';
+                    if (xIndex === rectangles.length - 1) color = 'pink';
+                    else if (xIndex === 0) color = 'lightgreen';
+                    return (
+                      <Rect
+                        key={xIndex + '-' + yIndex}
+                        x={item.x}
+                        y={item.y}
+                        width={item.width}
+                        height={item.height}
+                        color={color}
+                      />
+                    );
+                  })}
+                </Fragment>
+              );
+            })}
+            <ToolTip data={tooltip} />
+          </Canvas>
+        </GestureDetector>
+        {/* </ScrollView> */}
+      </View>
+    </GestureHandlerRootView>
   );
 }
 

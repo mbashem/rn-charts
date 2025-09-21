@@ -3,8 +3,8 @@ import { rect } from "@shopify/react-native-skia";
 import { arrayFrom, isDefined } from "../../util/util";
 import type { BarData, BarChartStyle } from "./BarChart";
 import type { TooltipData } from "../Tooltip";
-import { type GestureResponderEvent } from "react-native";
-import { getFont, getPaddings } from "../common";
+import { useWindowDimensions, type GestureResponderEvent, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
+import { getCommonStyleFont, getFont, getPaddings } from "../common";
 
 export default function useBarChart(
 	data: BarData[],
@@ -47,6 +47,7 @@ export default function useBarChart(
 
 	const steps = useMemo(() => arrayFrom(1, 0.2), []);
 	const [tooltip, setTooltip] = useState<TooltipData | undefined>(undefined);
+	const [startX, setStartX] = useState<number>(0);
 
 	const {
 		paddingLeft,
@@ -62,28 +63,40 @@ export default function useBarChart(
 	const strokeWidth = 2;
 	const bottomLabelHeight = 20;
 	const canvasHeight = chartHeight + bottomLabelHeight;
-	const fontSize = style?.fontSize ?? 12;
-	const font = getFont(fontSize);
+	const { width: windowWidth } = useWindowDimensions();
+	const width = style?.width ?? windowWidth;
 
-	const chartWidth = chartBarSpacing * data.length + data.length * chartBarWidth;
+	const scrollAreaWidth = data.length * (chartBarWidth + chartBarSpacing);
+	const canvasWidth = Math.min(scrollAreaWidth, width - verticalLabelWidth - paddingRight - paddingLeft);
+	const { font } = getCommonStyleFont(style);
+
 
 	const rectangles = useMemo(() => {
-		return data.map((bar, xIndex) => {
-			let previousHeight = 0;
-			const x = xIndex * (chartBarWidth + chartBarSpacing) + strokeWidth;
-			return bar.values.map((item, yIndex) => {
-				const barHeight =
-					((item.value - minValueCalculated) /
-						(maxValueCalculated - minValueCalculated)) *
-					chartHeight;
+		let leftBoundary = Math.max(0, startX);
+		let rightBoundary = startX + width;
 
-				const y =
-					chartHeight - barHeight - previousHeight - strokeWidth;
+		let startArrayIndex = Math.floor(leftBoundary / (chartBarWidth + chartBarSpacing));
+		let endArrayIndex = Math.min(Math.ceil(rightBoundary / (chartBarWidth + chartBarSpacing)), data.length);
 
-				previousHeight += barHeight;
-				return rect(x, y, chartBarWidth, barHeight);
+		return data.slice(startArrayIndex, endArrayIndex)
+			.map((bar, xIndex) => {
+				let previousHeight = 0;
+				const x = (xIndex + startArrayIndex) * (chartBarWidth + chartBarSpacing) - leftBoundary;
+				return {
+					bars: bar.values.map((item, yIndex) => {
+						const barHeight =
+							((item.value - minValueCalculated) /
+								(maxValueCalculated - minValueCalculated)) *
+							chartHeight;
+
+						const y =
+							chartHeight - barHeight - previousHeight - strokeWidth;
+
+						previousHeight += barHeight;
+						return rect(x, y, chartBarWidth, barHeight);
+					}), label: bar.label
+				};
 			});
-		});
 	}, [
 		data,
 		chartBarWidth,
@@ -91,6 +104,7 @@ export default function useBarChart(
 		maxValueCalculated,
 		minValueCalculated,
 		strokeWidth,
+		startX
 	]);
 
 	const onCanvasTouchStart = (event: GestureResponderEvent) => {
@@ -133,20 +147,29 @@ export default function useBarChart(
 			centerX: startingXIndex + chartBarWidth / 2,
 			centerY:
 				chartHeight - yPassed - strokeWidth + lastBarHeight / 2,
-			label: categoryData[yIndex - 1]!.label || ' :u ',
+			// label: categoryData[yIndex - 1]!.label || ' :u ',
+			label: data[xIndex]!.label ?? "NO"
 		});
 	};
 
-	function onScroll(event: any) { 
+	function onScroll(translateX: number) {
 		setTooltip(undefined);
+		setStartX((prev) => {
+			let newX = prev + translateX;
+			if (newX < 0) return 0;
+			if (newX + canvasWidth > scrollAreaWidth)
+				return Math.max(0, scrollAreaWidth - canvasWidth);
+			return newX;
+		});
 	}
 
 	return {
 		maxValueCalculated,
 		minValueCalculated,
 		canvasHeight,
+		canvasWidth,
 		steps,
-		chartWidth,
+		scrollAreaWidth,
 		chartHeight,
 		paddingTop,
 		paddingBottom,
@@ -159,7 +182,6 @@ export default function useBarChart(
 		rectangles,
 		tooltip,
 		bottomLabelHeight,
-		fontSize,
 		font,
 		setTooltip,
 		onCanvasTouchStart,

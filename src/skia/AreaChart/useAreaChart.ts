@@ -1,6 +1,6 @@
 import { Skia, type SkPath } from "@shopify/react-native-skia";
 import { useMemo } from "react";
-import { getFont, getPaddings } from "../common";
+import { getCommonStyleFont, getFont, getPaddings } from "../common";
 import type { AreaChartStyle } from "./AreaChart";
 import { isDefined } from "../../util/util";
 
@@ -42,8 +42,7 @@ function useAreaChart(
 	const xLabelHeight = xLabels && xLabels.length > 0 ? (style?.fontSize ?? 12) + 5 : 0;
 	const areaCanvasHeight = canvasHeight - xLabelHeight;
 
-	const fontSize = style?.fontSize ?? 12;
-	const font = getFont(fontSize);
+	const { font } = getCommonStyleFont(style);
 
 	const { maxValueCalculated, minValueCalculated } = useMemo(() => {
 		if (isDefined(maxValue) && isDefined(minValue)) {
@@ -104,7 +103,7 @@ function useAreaChart(
 		const labels = xLabels.map((label, i) => {
 			return {
 				label,
-				xPosition: i * stepX + fontSize,
+				xPosition: i * stepX + font.getSize(),
 			};
 		});
 		return labels;

@@ -1,18 +1,12 @@
 import { Canvas, Line, Text, Skia } from '@shopify/react-native-skia';
-import { getFont } from '../common';
+import { getFont, type CommonStyle } from '../common';
 
-interface VerticalLabelStyles {
+interface VerticalLabelStyles extends CommonStyle {
   width: number;
   height: number;
   strokeWidth?: number;
   strokeColor?: string;
   textColor?: string;
-  paddingTop?: number;
-  paddingRight?: number;
-  paddingBottom?: number;
-  paddingLeft?: number;
-  fontSize?: number;
-  backgroundColor?: string;
 }
 
 interface VerticalLabelProps {
