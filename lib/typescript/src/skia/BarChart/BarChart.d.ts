@@ -1,4 +1,4 @@
-import { type CommonStyles } from "../common";
+import { type CommonStyle } from '../common';
 export interface StackValue {
     value: number;
     label: string;
@@ -6,11 +6,13 @@ export interface StackValue {
 }
 export interface BarData {
     values: StackValue[];
-    label: string;
+    label?: string;
 }
-export interface BarChartStyle extends CommonStyles {
+export interface BarChartStyle extends CommonStyle {
     width?: number;
     height?: number;
+    barWidth?: number;
+    barSpacing?: number;
 }
 export interface BarChartProps {
     data: BarData[];

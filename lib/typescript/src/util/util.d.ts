@@ -23,4 +23,11 @@ export declare function isStringNumber(value: string): boolean;
 export declare function isDefined<T>(value: T | undefined | null): value is T;
 export declare function isFunction(value: any): value is Function;
 export declare function isString(node: ReactNode): node is string;
+type ArrayLengthMutationKeys = 'splice' | 'push' | 'pop' | 'shift' | 'unshift';
+export type FixedLengthArray<T, L extends number, TObj = [T, ...Array<T>]> = Pick<TObj, Exclude<keyof TObj, ArrayLengthMutationKeys>> & {
+    readonly length: L;
+    [I: number]: T;
+    [Symbol.iterator]: () => IterableIterator<T>;
+};
+export {};
 //# sourceMappingURL=util.d.ts.map

@@ -94,7 +94,10 @@ export default function useBarChart(
 
 						previousHeight += barHeight;
 						return rect(x, y, chartBarWidth, barHeight);
-					}), label: bar.label
+					}),
+					label: bar.label,
+					dataIndex: xIndex + startArrayIndex,
+					x: x
 				};
 			});
 	}, [
@@ -108,18 +111,31 @@ export default function useBarChart(
 	]);
 
 	const onCanvasTouchStart = (event: GestureResponderEvent) => {
-		let leftExtraXSpace = strokeWidth;
-		let xIndex = event.nativeEvent.locationX - leftExtraXSpace;
-		xIndex = Math.floor(xIndex / (chartBarWidth + chartBarSpacing));
-		let startingXIndex =
-			xIndex * (chartBarWidth + chartBarSpacing) + leftExtraXSpace;
-
-		if (startingXIndex + chartBarWidth < event.nativeEvent.locationX) {
-			console.log('Touch is outside the bar width, ignoring.');
+		if (rectangles.length === 0) {
 			setTooltip(undefined);
 			return;
 		}
 
+		const touchedX = event.nativeEvent.locationX;
+		let xIndex = -1;
+		let startingXIndex = 0;
+
+		if (touchedX >= rectangles[0]!.x && touchedX <= rectangles[0]!.x + rectangles[0]!.bars[0]!.width) {
+			xIndex = 0;
+			startingXIndex = Math.max(0, rectangles[0]!.x);
+		} else if (touchedX >= rectangles[0]!.x) {
+			xIndex = Math.floor((touchedX - (rectangles[0]!.x + rectangles[0]!.bars[0]!.width) - chartBarSpacing) / (chartBarWidth + chartBarSpacing)) + 1;
+			startingXIndex = rectangles[xIndex]!.x;
+		}
+
+		if (xIndex === -1 || (touchedX < rectangles[xIndex]!.x || touchedX > rectangles[xIndex]!.x + chartBarWidth)) {
+			console.log('Touch is outside the bar width, ignoring.');
+			setTooltip(undefined);
+			return;
+		}
+		xIndex = rectangles[xIndex]!.dataIndex;
+
+		const touchedY = event.nativeEvent.locationY;
 		let yIndex = 0;
 		let yPassed = 0;
 		let categoryData = data[xIndex]?.values || [];
@@ -137,8 +153,9 @@ export default function useBarChart(
 			lastBarHeight = barHeight;
 			yIndex++;
 		}
-
-		if (yIndex === 0) {
+		
+		if (yIndex === 0 || (yIndex === categoryData.length && touchedY < chartHeight - yPassed)) {
+			console.log('Touch is outside the bar height, ignoring.');
 			setTooltip(undefined);
 			return;
 		}
@@ -147,8 +164,7 @@ export default function useBarChart(
 			centerX: startingXIndex + chartBarWidth / 2,
 			centerY:
 				chartHeight - yPassed - strokeWidth + lastBarHeight / 2,
-			// label: categoryData[yIndex - 1]!.label || ' :u ',
-			label: data[xIndex]!.label ?? "NO"
+			label: categoryData[yIndex - 1]!.label,
 		});
 	};
 

@@ -1,8 +1,9 @@
 import { Skia, type SkPath } from "@shopify/react-native-skia";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getCommonStyleFont, getFont, getPaddings } from "../common";
 import type { AreaChartStyle } from "./AreaChart";
 import { isDefined } from "../../util/util";
+import type { GestureResponderEvent } from "react-native";
 
 export interface AreaData {
 	values: number[];
@@ -10,8 +11,14 @@ export interface AreaData {
 	color?: string;
 }
 
+interface Point {
+	x: number;
+	y: number;
+}
+
 export interface PathData {
 	path: SkPath;
+	points: Point[];
 	color?: string;
 	label?: string;
 }
@@ -19,6 +26,11 @@ export interface PathData {
 export interface XLable {
 	label: string;
 	xPosition: number;
+}
+
+interface TouchLine {
+  x: number;
+  y: number[];
 }
 
 function useAreaChart(
@@ -74,11 +86,14 @@ function useAreaChart(
 			const p = Skia.Path.Make();
 
 			p.moveTo(0, areaCanvasHeight);
+			const points: Point[] = [];
 
 			areaData.forEach((y, i) => {
 				const xPos = i * stepX;
-				const yPos = areaCanvasHeight - ((y - minValueCalculated) / (maxValueCalculated - minValueCalculated)) * areaCanvasHeight;
-				p.lineTo(xPos, Math.max(0, yPos));
+				const yPos = Math.max(0, areaCanvasHeight - ((y - minValueCalculated) / (maxValueCalculated - minValueCalculated)) * areaCanvasHeight);
+
+				points.push({x: xPos, y: yPos});
+				p.lineTo(xPos, yPos);
 			});
 
 			p.lineTo(width, areaCanvasHeight);
@@ -86,6 +101,7 @@ function useAreaChart(
 
 			pathData.push({
 				path: p,
+				points,
 				color: datum.color,
 				label: datum.label,
 			});
@@ -109,6 +125,17 @@ function useAreaChart(
 		return labels;
 	}, [xLabels, chartWidth]);
 
+	const [touchLine, setTouchLine] = useState<TouchLine | undefined>(undefined);
+
+	const onCanvasTouchStart = (event: GestureResponderEvent) => {
+		const xIndex = event.nativeEvent.locationX;
+		const yIndex = event.nativeEvent.locationY;
+
+		// setTouchLine({
+		// 	x: xIndex,
+		// });
+	};
+
 	return {
 		paths,
 		chartWidth,
@@ -119,7 +146,9 @@ function useAreaChart(
 		minValue: minValueCalculated,
 		xLabelsData,
 		xLabelHeight,
-		font
+		font,
+		onCanvasTouchStart,
+		touchLine
 	};
 }
 

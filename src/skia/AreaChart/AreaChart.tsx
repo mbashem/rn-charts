@@ -1,7 +1,8 @@
 // AreaChart.tsx
-import { useMemo } from 'react';
 import {
   Canvas,
+  Circle,
+  Group,
   Path,
   Skia,
   Text,
@@ -9,12 +10,17 @@ import {
 } from '@shopify/react-native-skia';
 import { getPaddings, type CommonStyle } from '../common';
 import VerticalLabel from '../Common/VerticalLabel';
-import { View } from 'react-native';
+import { View, type GestureResponderEvent } from 'react-native';
 import useAreaChart, { type AreaData } from './useAreaChart';
+import { useState } from 'react';
+import { lighten } from '../../util/colors';
 
 export interface AreaChartStyle extends CommonStyle {
   width: number;
   height: number;
+  showPoints?: boolean;
+  pointRadius?: number;
+  lightenPointsBy?: number;
 }
 
 interface AreaChartProps {
@@ -43,6 +49,8 @@ function AreaChart({
     xLabelsData,
     xLabelHeight,
     font,
+    touchLine,
+    onCanvasTouchStart,
   } = useAreaChart(data, xLabels, maxValueProp, minValueProp, style);
 
   return (
@@ -63,9 +71,25 @@ function AreaChart({
           width: chartWidth,
           height: canvasHeight,
         }}
+        onTouchStart={onCanvasTouchStart}
       >
-        {paths.map(({ path, color }, index) => {
-          return <Path key={index} path={path} color={color} />;
+        {paths.map(({ path, points, color }, index) => {
+          return (
+            <Group key={index}>
+              <Path path={path} color={color} />
+              {style?.showPoints &&
+                color &&
+                points.map((points) => (
+                  <Circle
+                    key={`${points.x}-${points.y}`}
+                    cx={points.x}
+                    cy={points.y}
+                    r={style?.pointRadius ?? 3}
+                    color={lighten(color, style?.lightenPointsBy ?? 0.3)}
+                  />
+                ))}
+            </Group>
+          );
         })}
         {xLabelsData.map(({ label, xPosition }, index) => {
           return (
@@ -79,6 +103,9 @@ function AreaChart({
             />
           );
         })}
+        {/* {touchLine && (
+
+        )} */}
       </Canvas>
     </View>
   );

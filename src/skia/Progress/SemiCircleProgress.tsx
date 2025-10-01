@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Button, useWindowDimensions } from 'react-native';
+import { View } from 'react-native';
 import {
   Canvas,
   LinearGradient,
-  Rect,
   RoundedRect,
 } from '@shopify/react-native-skia';
 import type { CommonStyle } from '../common';
@@ -22,7 +20,7 @@ export interface SemiCircleProgressStyles extends CommonStyle {
 
 export interface SemiCircleProgressProps {
   style: SemiCircleProgressStyles;
-  progress: number; // value between 0 and 1
+  progress: number;
 }
 
 export default function SemiCircleProgress({
@@ -33,11 +31,6 @@ export default function SemiCircleProgress({
   const height = style.height ?? 20;
   const radius = style.radius ?? 0;
   const tintColor = style.tintColor ?? '#4A90E2';
-
-  // Animate progress
-  useEffect(() => {
-    // runTiming(progress, 0.7, { duration: 1000 }); // progress to 70%
-  }, []);
 
   return (
     <View

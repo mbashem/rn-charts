@@ -1,9 +1,15 @@
+export interface ToolTipStyles {
+    padding?: number;
+}
 export interface TooltipData {
-    x: number;
-    y: number;
+    centerX: number;
+    centerY: number;
     label: string;
 }
-export default function ToolTip({ data }: {
+interface ToolTipProps {
     data: TooltipData | undefined;
-}): import("react/jsx-runtime").JSX.Element | null;
+    style?: ToolTipStyles;
+}
+export default function ToolTip({ data, style }: ToolTipProps): import("react/jsx-runtime").JSX.Element | null;
+export {};
 //# sourceMappingURL=Tooltip.d.ts.map

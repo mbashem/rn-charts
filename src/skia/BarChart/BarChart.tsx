@@ -136,8 +136,6 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
                     let color =
                       colors?.[currentData.id ?? currentData.label] ||
                       '#4A90E2';
-                    if (xIndex === rectangles.length - 1) color = 'pink';
-                    else if (xIndex === 0) color = 'lightgreen';
                     return (
                       <Rect
                         key={xIndex + '-' + yIndex}
