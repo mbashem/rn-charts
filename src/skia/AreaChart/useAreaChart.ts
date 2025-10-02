@@ -19,6 +19,7 @@ interface Point {
 export interface PathData {
 	path: SkPath;
 	points: Point[];
+	values: number[];
 	color?: string;
 	label?: string;
 }
@@ -29,8 +30,9 @@ export interface XLable {
 }
 
 interface TouchLine {
-  x: number;
-  y: number[];
+	x: number;
+	y: number[];
+	values: number[];
 }
 
 function useAreaChart(
@@ -74,41 +76,43 @@ function useAreaChart(
 			});
 		});
 
-		return { maxValueCalculated, minValueCalculated };
+		return { maxValueCalculated: maxValueCalculated + 10, minValueCalculated };
 	}, [data]);
 
 	const paths = useMemo(() => {
 		const pathData: PathData[] = [];
 		for (let datum of data) {
 			const areaData = datum.values;
-			const stepX = width / areaData.length;
-
+			const stepX = chartWidth / areaData.length;
 			const p = Skia.Path.Make();
 
 			p.moveTo(0, areaCanvasHeight);
 			const points: Point[] = [];
+			const values: number[] = [];
 
 			areaData.forEach((y, i) => {
 				const xPos = i * stepX;
 				const yPos = Math.max(0, areaCanvasHeight - ((y - minValueCalculated) / (maxValueCalculated - minValueCalculated)) * areaCanvasHeight);
 
-				points.push({x: xPos, y: yPos});
+				points.push({ x: xPos, y: yPos });
+				values.push(y);
 				p.lineTo(xPos, yPos);
 			});
 
-			p.lineTo(width, areaCanvasHeight);
+			p.lineTo(chartWidth, areaCanvasHeight);
 			p.close();
 
 			pathData.push({
 				path: p,
 				points,
+				values,
 				color: datum.color,
 				label: datum.label,
 			});
 		}
 
 		return pathData;
-	}, [data, maxValueCalculated, minValueCalculated]);
+	}, [data, chartWidth, maxValueCalculated, minValueCalculated]);
 
 	const xLabelsData: XLable[] = useMemo(() => {
 		if (!xLabels || xLabels.length === 0) {
@@ -128,12 +132,27 @@ function useAreaChart(
 	const [touchLine, setTouchLine] = useState<TouchLine | undefined>(undefined);
 
 	const onCanvasTouchStart = (event: GestureResponderEvent) => {
-		const xIndex = event.nativeEvent.locationX;
-		const yIndex = event.nativeEvent.locationY;
+		if (data.length === 0 || (data[0]?.values.length ?? 0) === 0) {
+			return;
+		}
 
-		// setTouchLine({
-		// 	x: xIndex,
-		// });
+		const touchedX = event.nativeEvent.locationX;
+
+		const stepX = chartWidth / data[0]!.values.length;
+		const xIndex = Math.round(touchedX / stepX);
+		if (xIndex < 0 || xIndex >= data[0]!.values.length) {
+			setTouchLine(undefined);
+			return;
+		}
+
+		const yValues: number[] = paths.map(path => path.points[xIndex]!.y);
+		const values: number[] = paths.map(path => path.values[xIndex]!);
+
+		setTouchLine({
+			x: xIndex * stepX,
+			y: yValues,
+			values
+		});
 	};
 
 	return {

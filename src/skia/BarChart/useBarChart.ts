@@ -124,7 +124,7 @@ export default function useBarChart(
 			xIndex = 0;
 			startingXIndex = Math.max(0, rectangles[0]!.x);
 		} else if (touchedX >= rectangles[0]!.x) {
-			xIndex = Math.floor((touchedX - (rectangles[0]!.x + rectangles[0]!.bars[0]!.width) - chartBarSpacing) / (chartBarWidth + chartBarSpacing)) + 1;
+			xIndex = Math.floor((touchedX - (rectangles[0]!.x + chartBarWidth) - chartBarSpacing) / (chartBarWidth + chartBarSpacing)) + 1;
 			startingXIndex = rectangles[xIndex]!.x;
 		}
 
@@ -153,7 +153,7 @@ export default function useBarChart(
 			lastBarHeight = barHeight;
 			yIndex++;
 		}
-		
+
 		if (yIndex === 0 || (yIndex === categoryData.length && touchedY < chartHeight - yPassed)) {
 			console.log('Touch is outside the bar height, ignoring.');
 			setTooltip(undefined);

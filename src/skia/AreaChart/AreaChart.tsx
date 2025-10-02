@@ -4,6 +4,7 @@ import {
   Circle,
   Group,
   Path,
+  Rect,
   Skia,
   Text,
   type SkPath,
@@ -14,6 +15,7 @@ import { View, type GestureResponderEvent } from 'react-native';
 import useAreaChart, { type AreaData } from './useAreaChart';
 import { useState } from 'react';
 import { lighten } from '../../util/colors';
+import ToolTip, { type ToolTipStyle } from '../Tooltip';
 
 export interface AreaChartStyle extends CommonStyle {
   width: number;
@@ -21,6 +23,7 @@ export interface AreaChartStyle extends CommonStyle {
   showPoints?: boolean;
   pointRadius?: number;
   lightenPointsBy?: number;
+  tooltipStyle?: ToolTipStyle;
 }
 
 interface AreaChartProps {
@@ -103,9 +106,17 @@ function AreaChart({
             />
           );
         })}
-        {/* {touchLine && (
-
-        )} */}
+        {touchLine &&
+          touchLine.y.map((y, index) => (
+            <ToolTip
+              data={{
+                centerX: touchLine.x,
+                centerY: y,
+                label: touchLine.values[index]!.toString(),
+              }}
+              style={style?.tooltipStyle}
+            />
+          ))}
       </Canvas>
     </View>
   );
