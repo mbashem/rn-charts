@@ -133,6 +133,7 @@ function useAreaChart(
 
 	const onCanvasTouchStart = (event: GestureResponderEvent) => {
 		if (data.length === 0 || (data[0]?.values.length ?? 0) === 0) {
+			setTouchLine(undefined);
 			return;
 		}
 

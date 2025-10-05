@@ -11,7 +11,11 @@ import {
 } from '@shopify/react-native-skia';
 import { getPaddings, type CommonStyle } from '../common';
 import VerticalLabel from '../Common/VerticalLabel';
-import { View, type GestureResponderEvent } from 'react-native';
+import {
+  TouchableWithoutFeedback,
+  View,
+  type GestureResponderEvent,
+} from 'react-native';
 import useAreaChart, { type AreaData } from './useAreaChart';
 import { useState } from 'react';
 import { lighten } from '../../util/colors';
@@ -57,68 +61,71 @@ function AreaChart({
   } = useAreaChart(data, xLabels, maxValueProp, minValueProp, style);
 
   return (
-    <View style={[style, { flexDirection: 'row' }]}>
-      <VerticalLabel
-        minValue={minValue}
-        maxValue={maxValue}
-        styles={{
-          height: areaCanvasHeight,
-          width: labelWidth,
-          fontSize: style?.fontSize,
-        }}
-        labelCount={5}
-      />
+    <TouchableWithoutFeedback onPress={() => console.log('pressed')}>
+      <View style={[style, { flexDirection: 'row' }]}>
+        <VerticalLabel
+          minValue={minValue}
+          maxValue={maxValue}
+          styles={{
+            height: areaCanvasHeight,
+            width: labelWidth,
+            fontSize: style?.fontSize,
+          }}
+          labelCount={5}
+        />
 
-      <Canvas
-        style={{
-          width: chartWidth,
-          height: canvasHeight,
-        }}
-        onTouchStart={onCanvasTouchStart}
-      >
-        {paths.map(({ path, points, color }, index) => {
-          return (
-            <Group key={index}>
-              <Path path={path} color={color} />
-              {style?.showPoints &&
-                color &&
-                points.map((points) => (
-                  <Circle
-                    key={`${points.x}-${points.y}`}
-                    cx={points.x}
-                    cy={points.y}
-                    r={style?.pointRadius ?? 3}
-                    color={lighten(color, style?.lightenPointsBy ?? 0.3)}
-                  />
-                ))}
-            </Group>
-          );
-        })}
-        {xLabelsData.map(({ label, xPosition }, index) => {
-          return (
-            <Text
-              key={index}
-              x={xPosition}
-              y={canvasHeight}
-              text={label}
-              font={font}
-              color={'white'}
-            />
-          );
-        })}
-        {touchLine &&
-          touchLine.y.map((y, index) => (
-            <ToolTip
-              data={{
-                centerX: touchLine.x,
-                centerY: y,
-                label: touchLine.values[index]!.toString(),
-              }}
-              style={style?.tooltipStyle}
-            />
-          ))}
-      </Canvas>
-    </View>
+        <Canvas
+          style={{
+            width: chartWidth,
+            height: canvasHeight,
+          }}
+          onTouchStart={onCanvasTouchStart}
+        >
+          {paths.map(({ path, points, color }, index) => {
+            return (
+              <Group key={index}>
+                <Path path={path} color={color} />
+                {style?.showPoints &&
+                  color &&
+                  points.map((points) => (
+                    <Circle
+                      key={`${points.x}-${points.y}`}
+                      cx={points.x}
+                      cy={points.y}
+                      r={style?.pointRadius ?? 3}
+                      color={lighten(color, style?.lightenPointsBy ?? 0.3)}
+                    />
+                  ))}
+              </Group>
+            );
+          })}
+          {xLabelsData.map(({ label, xPosition }, index) => {
+            return (
+              <Text
+                key={index}
+                x={xPosition}
+                y={canvasHeight}
+                text={label}
+                font={font}
+                color={'white'}
+              />
+            );
+          })}
+          {touchLine &&
+            touchLine.y.map((y, index) => (
+              <ToolTip
+                key={index}
+                data={{
+                  centerX: touchLine.x,
+                  centerY: y,
+                  label: touchLine.values[index]!.toString(),
+                }}
+                style={style?.tooltipStyle}
+              />
+            ))}
+        </Canvas>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
