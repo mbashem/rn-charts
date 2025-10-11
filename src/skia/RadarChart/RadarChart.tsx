@@ -1,5 +1,11 @@
 import React, { cloneElement, useMemo, type ReactNode } from 'react';
-import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 import {
   Canvas,
   Path,
@@ -30,7 +36,7 @@ interface RadarChartStyle extends CommonStyle {
 
 interface RadarChartProps {
   data: RadarDatum[];
-  labels: string[];
+  labels?: string[];
   labelViews?: ReactNode[];
   maxValue?: number;
   minValue?: number;
@@ -65,10 +71,10 @@ function RadarChart({
 
   const angles = useMemo(
     () =>
-      labels.map(
+      data[0]?.values.map(
         (_, index) => -Math.PI / 2 + (index * 2 * Math.PI) / data.length
-      ),
-    [labels.length]
+      ) ?? [],
+    [data[0]?.values.length]
   );
 
   // helper to calculate (x,y) for given angle and r (from center)
@@ -82,11 +88,11 @@ function RadarChart({
   // Precompute grid paths (concentric polygons)
   const gridPaths = useMemo(() => {
     const arr: SkPath[] = [];
-    for (let lev = 1; lev <= levels; lev++) {
-      const r = (radius * lev) / levels;
+    for (let level = 1; level <= levels; level++) {
+      const levelRadius = (radius * level) / levels;
       const p = Skia.Path.Make();
-      angles.forEach((ang, i) => {
-        const pt = pointFor(ang, r);
+      angles.forEach((angle, i) => {
+        const pt = pointFor(angle, levelRadius);
         if (i === 0) p.moveTo(pt.x, pt.y);
         else p.lineTo(pt.x, pt.y);
       });
@@ -94,28 +100,27 @@ function RadarChart({
       arr.push(p);
     }
     return arr;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [levels, radius, cx, cy, angles.join?.(',') /* eslint: defensive */]);
+  }, [levels, radius, cx, cy, angles]);
 
   // Axis lines path (one path per axis)
   const axisPaths = useMemo(() => {
-    return angles.map((ang) => {
-      const p = Skia.Path.Make();
-      const outer = pointFor(ang, radius);
-      p.moveTo(cx, cy);
-      p.lineTo(outer.x, outer.y);
-      return p;
+    return angles.map((angle) => {
+      const path = Skia.Path.Make();
+      const outer = pointFor(angle, radius);
+      path.moveTo(cx, cy);
+      path.lineTo(outer.x, outer.y);
+      return path;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [angles.join?.(','), radius, cx, cy]);
+  }, [angles, radius, cx, cy]);
 
   // Data polygon path
   const dataPaths = useMemo(() => {
     const paths = data.map(({ values, ...rest }) => {
       const path = Skia.Path.Make();
       values.forEach((value, index) => {
-        const r = Math.max(0, Math.min(1, value / safeMax)) * radius;
-        const point = pointFor(angles[index]!, r);
+        const currentRadius =
+          Math.max(0, Math.min(1, value / safeMax)) * radius;
+        const point = pointFor(angles[index]!, currentRadius);
         if (index === 0) path.moveTo(point.x, point.y);
         else path.lineTo(point.x, point.y);
       });
@@ -129,46 +134,45 @@ function RadarChart({
 
   // Label positions (rendered as RN Text overlay)
   const formatedlabels = useMemo(() => {
+		if (labels === undefined) return undefined;
     const out: {
       x: number;
       y: number;
       label: string;
       align: 'left' | 'center' | 'right';
     }[] = [];
-    const labelRadius = radius + 12; // label distance from center (slightly outside)
-    angles.forEach((ang, i) => {
-      const pt = pointFor(ang, labelRadius);
-      // decide alignment based on angle quadrant
-      const deg = (ang * 180) / Math.PI;
+    const labelRadius = radius + 12;
+    angles.forEach((angle, i) => {
+      const pt = pointFor(angle, labelRadius);
+      const deg = (angle * 180) / Math.PI;
       let align: 'left' | 'center' | 'right' = 'center';
       if (deg > -90 && deg < 90)
-        align = 'left'; // right side -> label left aligned to avoid overflow
-      else if (deg > 90 || deg < -90) align = 'right';
+        align = 'left';
+      else if (deg > 90 || deg < -90) align = 'right', pt.x = size - pt.x;
       else align = 'center';
       out.push({ x: pt.x, y: pt.y, label: labels[i]!, align });
     });
     return out;
-  }, [angles, radius, labels.join(',')]);
+  }, [angles, radius, labels]);
 
   const formatedLabelViews = useMemo(() => {
-    if (labelViews === undefined) return [];
+    if (labelViews === undefined) return undefined;
     const out: {
       x: number;
       y: number;
       view: ReactNode;
       align: 'left' | 'center' | 'right';
     }[] = [];
-    const labelRadius = radius + 12; // label distance from center (slightly outside)
-    angles.forEach((ang, i) => {
-      const pt = pointFor(ang, labelRadius);
-      // decide alignment based on angle quadrant
-      const deg = (ang * 180) / Math.PI;
-      let align: 'left' | 'center' | 'right' = 'center';
-      if (deg > -90 && deg < 90)
-        align = 'left'; // right side -> label left aligned to avoid overflow
-      else if (deg > 90 || deg < -90) align = 'right';
-      else align = 'center';
-      out.push({ x: pt.x, y: pt.y, view: labelViews[i]!, align });
+    const labelRadius = radius + 12;
+    angles.forEach((angle, i) => {
+      const pt = pointFor(angle, labelRadius);
+      const degree = (angle * 180) / Math.PI;
+      let alignment: 'left' | 'center' | 'right' = 'center';
+      if (degree > -90 && degree < 90)
+        alignment = 'left';
+      else if (degree > 90 || degree < -90) alignment = 'right', pt.x = size - pt.x;
+      else alignment = 'center';
+      out.push({ x: pt.x, y: pt.y, view: labelViews[i]!, align: alignment });
     });
     return out;
   }, [angles, radius, labelViews]);
@@ -191,17 +195,16 @@ function RadarChart({
       <Canvas style={{ width: size, height: size }}>
         <Group>
           {/* grid polygons */}
-          {gridPaths.map((gp, idx) => (
+          {gridPaths.map((gridPath, idx) => (
             <Path
               key={'g' + idx}
-              path={gp}
+              path={gridPath}
               style="stroke"
               strokeWidth={strokeWidth}
               color={strokeColor}
             />
           ))}
 
-          {/* axis lines */}
           {axisPaths.map((ap, idx) => (
             <Path
               key={'a' + idx}
@@ -212,8 +215,8 @@ function RadarChart({
             />
           ))}
 
-          {dataPaths.map((pathDatum) => (
-            <Group>
+          {dataPaths.map((pathDatum, index) => (
+            <Group key={index}>
               <Path
                 path={pathDatum.path}
                 style="fill"
@@ -228,8 +231,6 @@ function RadarChart({
             </Group>
           ))}
 
-          {/* data polygon stroke */}
-
           {/* center dot */}
           <Circle cx={cx} cy={cy} r={centerDotRadius} color={centerDotColor} />
         </Group>
@@ -243,52 +244,36 @@ function RadarChart({
         ]}
         pointerEvents="none"
       >
-        {/* {formatedLabelViews.map((viewDataum) => {
-          if (React.isValidElement(viewDataum.view)) {
-            const left = viewDataum.x;
-            const top = viewDataum.y;
-            let transformStyle: ViewStyle = {
-              position: 'absolute',
-              left: left - 10,
-              top: top - 8,
-            };
-            let newView = React.cloneElement(viewDataum.view, {
-              style: {
-                position: 'absolute',
-                left: transformStyle.left,
-                top: transformStyle.top,
-              },
-            });
-            return newView;
-          }
-          return viewDataum.view;
-        })} */}
-        {formatedlabels.map((l, i) => {
-          // compute transform to position each label; adjust small offsets for nicer placement
-          const left = l.x;
-          const top = l.y;
-          let transformStyle: ViewStyle = {
+        {formatedLabelViews && formatedLabelViews.map((viewDataum, index) => {
+          const top = viewDataum.y;
+          let style: ViewStyle = {
             position: 'absolute',
-            left: left - 10,
-            top: top - 8,
+            top: top,
           };
-          // adjust based on alignment
-          if (l.align === 'left') transformStyle.left = left + 4;
-          if (l.align === 'right') transformStyle.left = left - 60; // assume label width up to ~50
+          if (viewDataum.align === 'left') style.left = viewDataum.x;
+          if (viewDataum.align === 'right') style.right = viewDataum.x;
+
           return (
-            <Text
-              key={'lbl' + i}
-              style={[
-                {
-                  position: 'absolute',
-                  left: transformStyle.left,
-                  top: transformStyle.top,
-                  fontSize: 12,
-                  includeFontPadding: false,
-                },
-              ]}
-            >
-              {l.label}
+            <View style={style} key={index}>
+              {viewDataum.view}
+            </View>
+          );
+        })}
+        {formatedlabels && formatedlabels.map((formatedlabel, index) => {
+          const top = formatedlabel.y;
+          let style: TextStyle = {
+            position: 'absolute',
+            top: top - 6,
+            fontSize: 12,
+            includeFontPadding: false,
+          };
+
+          if (formatedlabel.align === 'left') style.left = formatedlabel.x;
+          if (formatedlabel.align === 'right') style.right = formatedlabel.x;
+
+          return (
+            <Text key={index} style={style}>
+              {formatedlabel.label}
             </Text>
           );
         })}
