@@ -14,11 +14,8 @@ import {
   type SkPath,
   Circle,
 } from '@shopify/react-native-skia';
-import { getPaddings, type CommonStyle } from '../common';
+import { type CommonStyle } from '../common';
 import useRadarChart from './useRadarChart';
-import { arrayFrom } from '../../util/util';
-
-type Point = { x: number; y: number };
 
 export interface RadarDatum {
   values: number[];
@@ -27,7 +24,7 @@ export interface RadarDatum {
   strokeWidth?: number;
 }
 
-interface RadarChartStyle extends CommonStyle {
+export interface RadarChartStyle extends CommonStyle {
   size?: number;
   strokeWidth?: number;
   strokeColor?: string;
@@ -35,7 +32,7 @@ interface RadarChartStyle extends CommonStyle {
   centerDotColor?: string;
 }
 
-interface RadarChartProps {
+export interface RadarChartProps {
   data: RadarDatum[];
   labels?: string[];
   levels?: number;
@@ -45,150 +42,21 @@ interface RadarChartProps {
   style?: RadarChartStyle;
 }
 
-function RadarChart({
-  data,
-  labels,
-  labelViews,
-  maxValue,
-  minValue = 0,
-  levels = 5,
-  style,
-}: RadarChartProps) {
-  const {} = useRadarChart();
-  const safeMax = useMemo(() => {
-    if (maxValue !== undefined) return maxValue;
-    let currentMaxValue = minValue;
-    for (let datum of data)
-      for (let value of datum.values) {
-        currentMaxValue = Math.max(currentMaxValue, value);
-      }
-    return currentMaxValue;
-  }, [data, maxValue]);
-
-  const size = style?.size ?? 200;
-  const { paddingHorizontal, paddingVertical } = getPaddings(style);
-
-  const radius = size / 2 - Math.max(paddingHorizontal, paddingVertical) / 2;
-  const cx = size / 2;
-  const cy = size / 2;
-
-  const angles = useMemo(() => {
-    let length = data[0]?.values.length ?? 0;
-    if (length === 0 && labels) length = labels.length;
-    if (length === 0 && labelViews) length = labelViews.length;
-    if (length === 0) return [];
-    return arrayFrom(length, 1).map(
-      (i) => -Math.PI / 2 + (i * 2 * Math.PI) / length
-    );
-  }, [data[0]?.values.length, labels?.length, labelViews?.length]);
-  console.log(angles);
-  // helper to calculate (x,y) for given angle and r (from center)
-  const pointFor = (angle: number, r: number): Point => ({
-    x: cx + Math.cos(angle) * r,
-    y: cy + Math.sin(angle) * r,
-  });
-
-  // Precompute grid paths (concentric polygons)
-  const gridPaths = useMemo(() => {
-    const arr: SkPath[] = [];
-    for (let level = 1; level <= levels; level++) {
-      const levelRadius = (radius * level) / levels;
-      const p = Skia.Path.Make();
-      angles.forEach((angle, i) => {
-        const pt = pointFor(angle, levelRadius);
-        if (i === 0) p.moveTo(pt.x, pt.y);
-        else p.lineTo(pt.x, pt.y);
-      });
-      p.close();
-      arr.push(p);
-    }
-    return arr;
-  }, [levels, radius, cx, cy, angles]);
-
-  // Axis lines path (one path per axis)
-  const axisPaths = useMemo(() => {
-    return angles.map((angle) => {
-      const path = Skia.Path.Make();
-      const outer = pointFor(angle, radius);
-      path.moveTo(cx, cy);
-      path.lineTo(outer.x, outer.y);
-      return path;
-    });
-  }, [angles, radius, cx, cy]);
-
-  // Data polygon path
-  const dataPaths = useMemo(() => {
-    const paths = data.map(({ values, ...rest }) => {
-      const path = Skia.Path.Make();
-      values.forEach((value, index) => {
-        const currentRadius =
-          Math.max(0, Math.min(1, value / safeMax)) * radius;
-        const point = pointFor(angles[index]!, currentRadius);
-        if (index === 0) path.moveTo(point.x, point.y);
-        else path.lineTo(point.x, point.y);
-      });
-
-      path.close();
-      return { path: path, ...rest };
-    });
-
-    return paths;
-  }, [data, radius, safeMax, angles]);
-
-  // Label positions (rendered as RN Text overlay)
-  const formatedlabels = useMemo(() => {
-    if (labels === undefined) return undefined;
-    const out: {
-      x: number;
-      y: number;
-      label: string;
-      align: 'left' | 'center' | 'right';
-    }[] = [];
-    const labelRadius = radius + 12;
-    angles.forEach((angle, i) => {
-      const point = pointFor(angle, labelRadius);
-      const degree = (angle * 180) / Math.PI;
-      let align: 'left' | 'center' | 'right' = 'center';
-      if (degree > -90 && degree < 90) align = 'left';
-      else if (degree > 90 || degree < -90)
-        ((align = 'right'), (point.x = size - point.x));
-      else align = 'center';
-      out.push({ x: point.x, y: size - point.y, label: labels[i]!, align });
-    });
-    return out;
-  }, [angles, radius, labels]);
-
-  const formatedLabelViews = useMemo(() => {
-    if (labelViews === undefined) return undefined;
-    const out: {
-      x: number;
-      y: number;
-      view: ReactNode;
-      align: 'left' | 'center' | 'right';
-    }[] = [];
-    const labelRadius = radius + 12;
-    angles.forEach((angle, i) => {
-      const point = pointFor(angle, labelRadius);
-      const degree = (angle * 180) / Math.PI;
-      let alignment: 'left' | 'center' | 'right' = 'center';
-      if (degree > -90 && degree < 90) alignment = 'left';
-      else if (degree > 90 || degree < -90)
-        ((alignment = 'right'), (point.x = size - point.x));
-      else alignment = 'center';
-      out.push({
-        x: point.x,
-        y: size - point.y,
-        view: labelViews[i]!,
-        align: alignment,
-      });
-    });
-    return out;
-  }, [angles, radius, labelViews]);
-
-  const strokeWidth = style?.strokeWidth ?? 2;
-  const strokeColor = style?.strokeColor ?? 'gray';
-  const centerDotRadius = style?.centerDotRadius ?? 2;
-  const centerDotColor = style?.centerDotColor ?? strokeColor;
+function RadarChart(props: RadarChartProps) {
+    const {
+    size,
+    cx,
+    cy,
+    gridPaths,
+    axisPaths,
+    dataPaths,
+    formattedLabels,
+    formattedLabelViews,
+    strokeWidth,
+    strokeColor,
+    centerDotRadius,
+    centerDotColor,
+  } = useRadarChart(props);
 
   return (
     <View
@@ -196,7 +64,7 @@ function RadarChart({
         {
           width: size,
           height: size,
-          backgroundColor: style?.backgroundColor,
+          backgroundColor: props.style?.backgroundColor,
         },
       ]}
     >
@@ -252,8 +120,8 @@ function RadarChart({
         ]}
         pointerEvents="none"
       >
-        {formatedLabelViews &&
-          formatedLabelViews.map((viewDataum, index) => {
+        {formattedLabelViews &&
+          formattedLabelViews.map((viewDataum, index) => {
             let style: ViewStyle = {
               position: 'absolute',
               bottom: viewDataum.y,
@@ -267,8 +135,8 @@ function RadarChart({
               </View>
             );
           })}
-        {formatedlabels &&
-          formatedlabels.map((formatedlabel, index) => {
+        {formattedLabels &&
+          formattedLabels.map((formatedlabel, index) => {
             let style: TextStyle = {
               position: 'absolute',
               bottom: formatedlabel.y,

@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, type GestureResponderEvent } from 'react-native';
 import { Canvas, Group, Rect } from '@shopify/react-native-skia';
 import useHeatMap from './useHeatMap';
+import type { GestureTouchEvent } from 'react-native-gesture-handler';
 
 type DayData = {
   date: string; // "YYYY-MM-DD"
@@ -15,7 +16,7 @@ type DayData = {
 type HeatMapProps = {
   startDate: string;
   endDate: string;
-  data: DayData[];
+  data?: Record<string, number>;
   cellSize?: number;
   cellGap?: number;
   color?: string;
@@ -36,10 +37,12 @@ function HeatMap({
   renderPopup,
 }: HeatMapProps) {
   const {} = useHeatMap();
-  const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
-  const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(
-    null
+  const [selectedDay, setSelectedDay] = useState<DayData | undefined>(
+    undefined
   );
+  const [popupPos, setPopupPos] = useState<
+    { x: number; y: number } | undefined
+  >(undefined);
 
   // Helper to format dates
   const formatDate = (date: Date) =>
@@ -48,34 +51,36 @@ function HeatMap({
       '0'
     )}-${String(date.getDate()).padStart(2, '0')}`;
 
+  const numberOfDaysInWeek = 7;
+  const numberOfMsInDay = 1000 * 60 * 60 * 24;
   // Generate all days between startDate and endDate (inclusive)
   const daysInRange = useMemo(() => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const allDays: DayData[] = [];
+    let startDayOfWeek = start.getDay();
+
     for (
       let date = new Date(start);
       date <= end;
       date.setDate(date.getDate() + 1)
     ) {
       const dateStr = formatDate(date);
-      const found = data.find((x) => x.date === dateStr);
+      const value = data?.[dateStr] ?? 0;
       let dayOfWeek = date.getDay();
       let week = 0;
-      let numberOfDaysInWeek = 7;
-      let numberOfMsInDay = 1000 * 60 * 60 * 24;
 
       let numberOfDaysFromStart = Math.floor(
         (date.getTime() - start.getTime()) / numberOfMsInDay
       );
 
-      let startDayOfWeek = start.getDay();
-
-      week = Math.floor((startDayOfWeek + numberOfDaysFromStart) / 7);
+      week = Math.floor(
+        (startDayOfWeek + numberOfDaysFromStart) / numberOfDaysInWeek
+      );
 
       allDays.push({
         date: dateStr,
-        value: found ? found.value : 0,
+        value: value,
         dayOfWeek,
         week,
         x: week * (cellSize + cellGap),
@@ -111,36 +116,39 @@ function HeatMap({
     return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
   };
 
-  const numWeeks = Math.ceil(daysInRange.length / 7);
+  const numWeeks = Math.ceil(daysInRange.length / 7 + 1);
 
   const totalWidth = numWeeks * (cellSize + cellGap);
   const totalHeight = 7 * (cellSize + cellGap);
 
   // Skia touch handler
-  // const touchHandler = useTouchHandler({
-  //   onStart: (touch) => {
-  //     const { x, y } = touch;
-  //     const col = Math.floor(x / (cellSize + cellGap));
-  //     const row = Math.floor(y / (cellSize + cellGap));
-  //     const index = col * 7 + row;
-  //     if (index >= 0 && index < daysInRange.length) {
-  //       const day = daysInRange[index];
-  //       setSelectedDay(day);
-  //       setPopupPos({ x, y });
-  //     } else {
-  //       setSelectedDay(null);
-  //       setPopupPos(null);
-  //     }
-  //   },
-  // });
+  const touchHandler = (touch: GestureResponderEvent) => {
+    const x = touch.nativeEvent.locationX;
+    const y = touch.nativeEvent.locationY;
+    const col = Math.floor(x / (cellSize + cellGap));
+    const row = Math.floor(y / (cellSize + cellGap));
+    const start = new Date(startDate);
+    let startDayOfWeek = start.getDay();
 
-  // const touchValue = useValue({ x: 0, y: 0 });
+    const index = col * numberOfDaysInWeek + row;
+    if (
+      index >= startDayOfWeek &&
+      index - startDayOfWeek < daysInRange.length
+    ) {
+      const day = daysInRange[index - startDayOfWeek];
+      setSelectedDay(day);
+      setPopupPos({ x, y });
+    } else {
+      setSelectedDay(undefined);
+      setPopupPos(undefined);
+    }
+  };
 
   return (
     <View>
       <Canvas
         style={{ width: totalWidth, height: totalHeight }}
-        // onTouch={touchHandler}
+        onTouchStart={touchHandler}
       >
         <Group>
           {daysInRange.map((day, i) => {
@@ -161,10 +169,10 @@ function HeatMap({
       {selectedDay && popupPos && renderPopup && (
         <View
           style={[
-            styles.popupContainer,
             {
-              left: popupPos.x + cellSize / 2,
-              top: popupPos.y + cellSize / 2,
+              position: 'absolute',
+              left: Math.max(0, popupPos.x - cellSize / 2),
+              top: Math.max(0, popupPos.y - cellSize / 2),
             },
           ]}
         >
@@ -174,19 +182,5 @@ function HeatMap({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  popupContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -50 }, { translateY: -50 }],
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 8,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-});
 
 export default HeatMap;
