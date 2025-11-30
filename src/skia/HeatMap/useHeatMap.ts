@@ -1,5 +1,164 @@
-function useHeatMap() {
-	return {};
+import type { View } from "react-native-reanimated/lib/typescript/Animated";
+import type { DayData, HeatMapProps } from "./HeatMap";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { GestureResponderEvent } from "react-native";
+
+function useHeatMap({
+  startDate,
+  endDate,
+  data,
+  cellSize = 24,
+  cellGap = 4,
+  color = '#4CAF50',
+  minValue,
+  maxValue,
+  renderPopup,
+}: HeatMapProps) {
+  const numberOfDaysInWeek = 7;
+  const numberOfMsInDay = 1000 * 60 * 60 * 24;
+
+  const [popupData, setPopupData] = useState<
+    { x: number; y: number; day: DayData } | undefined
+  >(undefined);
+
+  const [popupDimension, setPopupDimension] = useState({
+    width: 0,
+    height: 0,
+  });
+
+  const popupRef = useRef<View>(null);
+
+  const formatDate = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}-${String(date.getDate()).padStart(2, '0')}`;
+
+  const { daysInRange, computedMin, computedMax } = useMemo(() => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const output: DayData[] = [];
+    let computedMax = Number.MIN_VALUE;
+    let computedMin = Number.MAX_VALUE;
+
+    const startDayOfWeek = start.getDay();
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = formatDate(d);
+      const value = data?.[dateStr] ?? 0;
+
+      const dayOfWeek = d.getDay();
+      const daysFromStart = Math.floor(
+        (d.getTime() - start.getTime()) / numberOfMsInDay
+      );
+
+      const week = Math.floor(
+        (startDayOfWeek + daysFromStart) / numberOfDaysInWeek
+      );
+
+      computedMax = Math.max(computedMax, value);
+      computedMin = Math.min(computedMin, value);
+
+      output.push({
+        date: dateStr,
+        value,
+        dayOfWeek,
+        week,
+        x: week * (cellSize + cellGap),
+        y: dayOfWeek * (cellSize + cellGap),
+      });
+    }
+
+    return {
+      daysInRange: output,
+      computedMin: minValue !== undefined ? minValue : computedMin,
+      computedMax: maxValue !== undefined ? maxValue : computedMax,
+    };
+  }, [startDate, endDate, data, minValue, maxValue, cellSize, cellGap]);
+
+  // --- COLOR LOGIC ---
+  const getColor = (value: number) => {
+    if (value <= 0) return '#e0e0e0';
+
+    const intensity = Math.min(
+      1,
+      Math.max(0, (value - computedMin) / (computedMax - computedMin || 1))
+    );
+
+    const bigint = parseInt(color.replace('#', ''), 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+
+    const mix = (base: number) => Math.round(255 - (255 - base) * intensity);
+
+    return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+  };
+
+  // Heatmap size
+  const numWeeks = Math.ceil(daysInRange.length / 7 + 1);
+  const totalWidth = numWeeks * (cellSize + cellGap);
+  const totalHeight = 7 * (cellSize + cellGap);
+
+  // --- POPUP MEASUREMENT ---
+  useLayoutEffect(() => {
+    if (popupRef.current) {
+      popupRef.current.measure((x, y, width, height) => {
+        setPopupDimension({ width, height });
+      });
+    }
+  }, [popupData]);
+
+  // --- TOUCH HANDLER ---
+  const touchHandler = (e: GestureResponderEvent) => {
+    if (!renderPopup) {
+      setPopupData(undefined);
+      return;
+    }
+
+    const x = e.nativeEvent.locationX;
+    const y = e.nativeEvent.locationY;
+
+    const col = Math.floor(x / (cellSize + cellGap));
+    const row = Math.floor(y / (cellSize + cellGap));
+
+    const start = new Date(startDate);
+    const startDayOfWeek = start.getDay();
+
+    const index = col * numberOfDaysInWeek + row;
+
+    if (
+      index >= startDayOfWeek &&
+      index - startDayOfWeek < daysInRange.length
+    ) {
+      const day = daysInRange[index - startDayOfWeek];
+      if (day) {
+        setPopupData({
+          x: col * (cellSize + cellGap),
+          y: row * (cellSize + cellGap),
+          day,
+        });
+        return;
+      }
+    }
+
+    setPopupData(undefined);
+  };
+
+  return {
+    daysInRange,
+    computedMin,
+    computedMax,
+    totalWidth,
+    totalHeight,
+    popupData,
+    popupRef,
+    popupDimension,
+    touchHandler,
+    getColor,
+		cellSize
+  };
 }
 
 export default useHeatMap;
