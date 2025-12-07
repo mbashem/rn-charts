@@ -1,19 +1,24 @@
 import type { View } from "react-native-reanimated/lib/typescript/Animated";
 import type { DayData, HeatMapProps } from "./HeatMap";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { GestureResponderEvent } from "react-native";
 
 function useHeatMap({
   startDate,
   endDate,
   data,
-  cellSize = 24,
-  cellGap = 4,
-  color = '#4CAF50',
+	style,
   minValue,
   maxValue,
   renderPopup,
+	ref
 }: HeatMapProps) {
+
+	const cellSize = style?.cellSize ?? 24;
+	const cellGap = style?.cellGap ?? 4;
+	const cellMaxColor = style?.cellMaxColor ?? '#50f555ff';
+	const cellMinColor = style?.cellMinColor ?? '#ffffffff';
+
   const numberOfDaysInWeek = 7;
   const numberOfMsInDay = 1000 * 60 * 60 * 24;
 
@@ -79,14 +84,14 @@ function useHeatMap({
 
   // --- COLOR LOGIC ---
   const getColor = (value: number) => {
-    if (value <= 0) return '#e0e0e0';
+    if (value <= 0) return cellMinColor;
 
     const intensity = Math.min(
       1,
       Math.max(0, (value - computedMin) / (computedMax - computedMin || 1))
     );
 
-    const bigint = parseInt(color.replace('#', ''), 16);
+    const bigint = parseInt(cellMaxColor.replace('#', ''), 16);
     const r = (bigint >> 16) & 255;
     const g = (bigint >> 8) & 255;
     const b = bigint & 255;
@@ -145,6 +150,12 @@ function useHeatMap({
 
     setPopupData(undefined);
   };
+
+	useImperativeHandle(ref, () => ({
+		touchedOutside: () => {
+			setPopupData(undefined);
+		}
+	}), [ref])
 
   return {
     daysInRange,
