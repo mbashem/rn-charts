@@ -7,23 +7,23 @@ function useHeatMap({
   startDate,
   endDate,
   data,
-	style,
+  style,
   minValue,
   maxValue,
   renderPopup,
-	ref
+  ref
 }: HeatMapProps) {
 
-	const cellSize = style?.cellSize ?? 24;
-	const cellGap = style?.cellGap ?? 4;
-	const cellMaxColor = style?.cellMaxColor ?? '#50f555ff';
-	const cellMinColor = style?.cellMinColor ?? '#ffffffff';
+  const cellSize = style?.cellSize ?? 24;
+  const cellGap = style?.cellGap ?? 4;
+  const cellMaxColor = style?.cellMaxColor ?? '#50f555ff';
+  const cellMinColor = style?.cellMinColor ?? '#ffffffff';
 
   const numberOfDaysInWeek = 7;
   const numberOfMsInDay = 1000 * 60 * 60 * 24;
 
   const [popupData, setPopupData] = useState<
-    { x: number; y: number; day: DayData } | undefined
+    { x: number; y: number; day: DayData; } | undefined
   >(undefined);
 
   const [popupDimension, setPopupDimension] = useState({
@@ -116,14 +116,11 @@ function useHeatMap({
   }, [popupData]);
 
   // --- TOUCH HANDLER ---
-  const touchHandler = (e: GestureResponderEvent) => {
-    if (!renderPopup) {
+  const touchHandler = (x: number, y: number) => {
+    if (!renderPopup || (x < 0 || y < 0 || x >= totalWidth || y >= totalHeight)) {
       setPopupData(undefined);
       return;
     }
-
-    const x = e.nativeEvent.locationX;
-    const y = e.nativeEvent.locationY;
 
     const col = Math.floor(x / (cellSize + cellGap));
     const row = Math.floor(y / (cellSize + cellGap));
@@ -150,12 +147,15 @@ function useHeatMap({
 
     setPopupData(undefined);
   };
+  const onTouchOutside = () => {
+    setPopupData(undefined);
+  };
 
-	useImperativeHandle(ref, () => ({
-		touchedOutside: () => {
-			setPopupData(undefined);
-		}
-	}), [ref])
+  useImperativeHandle(ref, () => ({
+    touchedOutside: () => {
+      setPopupData(undefined);
+    }
+  }), [ref]);
 
   return {
     daysInRange,
@@ -168,7 +168,8 @@ function useHeatMap({
     popupDimension,
     touchHandler,
     getColor,
-		cellSize
+    cellSize,
+    onTouchOutside
   };
 }
 

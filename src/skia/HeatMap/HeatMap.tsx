@@ -1,5 +1,5 @@
 import React, { type Ref } from 'react';
-import { View, Pressable, Dimensions } from 'react-native';
+import { View, Modal } from 'react-native';
 import { Canvas, Group, Rect } from '@shopify/react-native-skia';
 import useHeatMap from './useHeatMap';
 import type { CommonStyle } from '../common';
@@ -46,16 +46,33 @@ function HeatMap(props: HeatMapProps) {
     touchHandler,
     getColor,
     cellSize,
+    onTouchOutside,
   } = useHeatMap(props);
 
+  const [viewOffset, setViewOffset] = React.useState({ x: 0, y: 0 });
+
   return (
-    <View style={{ backgroundColor: props.style?.backgroundColor }}>
+    <View
+      style={{ backgroundColor: props.style?.backgroundColor }}
+      ref={(view) => {
+        view?.measureInWindow((fx, fy) => {
+          setViewOffset((prev) => {
+            if (prev.x === fx && prev.y === fy) {
+              return prev;
+            }
+            return { x: fx, y: fy };
+          });
+        });
+      }}
+    >
       <Canvas
         style={{ width: totalWidth, height: totalHeight }}
-        onTouchStart={touchHandler}
+        onTouchStart={(event) =>
+          touchHandler(event.nativeEvent.locationX, event.nativeEvent.locationY)
+        }
       >
         <Group>
-          {daysInRange.map((day, i) => {
+          {daysInRange.map((day) => {
             return (
               <Rect
                 key={day.date}
@@ -71,36 +88,51 @@ function HeatMap(props: HeatMapProps) {
       </Canvas>
 
       {popupData && props.renderPopup && (
-        <>
-          <Pressable
-            onPress={touchHandler}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: Dimensions.get('window').width,
-              height: Dimensions.get('window').height,
-            }}
-          />
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={popupData !== undefined}
+          onRequestClose={() => {
+            onTouchOutside();
+          }}
+          onTouchStart={(e) => {
+            console.log('modal touched ');
+          }}
+        >
           <View
-            style={[
-              {
-                position: 'absolute',
-                left: Math.max(
-                  0,
-                  Math.min(popupData.x, totalWidth - popupDimension.width)
-                ),
-                top: Math.max(
-                  0,
-                  Math.min(popupData.y, totalHeight - popupDimension.height)
-                ),
-              },
-            ]}
-            ref={popupRef}
+            style={{
+              flex: 1,
+              width: '100%',
+              height: '100%',
+            }}
+            onTouchStart={(e) => {
+              const x = e.nativeEvent.pageX;
+              const y = e.nativeEvent.pageY;
+              touchHandler(x - viewOffset.x, y - viewOffset.y);
+            }}
           >
-            {props.renderPopup(popupData.day)}
+            <View
+              style={[
+                {
+                  position: 'absolute',
+                  left: Math.max(
+                    0,
+                    Math.min(popupData.x, totalWidth - popupDimension.width) +
+                      viewOffset.x
+                  ),
+                  top: Math.max(
+                    0,
+                    Math.min(popupData.y, totalHeight - popupDimension.height) +
+                      viewOffset.y
+                  ),
+                },
+              ]}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              {props.renderPopup(popupData.day)}
+            </View>
           </View>
-        </>
+        </Modal>
       )}
     </View>
   );
