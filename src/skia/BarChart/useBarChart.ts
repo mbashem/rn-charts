@@ -64,16 +64,17 @@ export default function useBarChart(
 	const bottomLabelHeight = 20;
 	const canvasHeight = chartHeight + bottomLabelHeight;
 	const { width: windowWidth } = useWindowDimensions();
-	const width = style?.width ?? windowWidth;
+	const totalWidth = style?.width ?? windowWidth;
+	const totalHeight = chartHeight;
 
 	const scrollAreaWidth = data.length * (chartBarWidth + chartBarSpacing);
-	const canvasWidth = Math.min(scrollAreaWidth, width - verticalLabelWidth - paddingRight - paddingLeft);
+	const canvasWidth = Math.min(scrollAreaWidth, totalWidth - verticalLabelWidth - paddingRight - paddingLeft);
 	const { font } = getCommonStyleFont(style);
 
 
 	const rectangles = useMemo(() => {
 		let leftBoundary = Math.max(0, startX);
-		let rightBoundary = startX + width;
+		let rightBoundary = startX + totalWidth;
 
 		let startArrayIndex = Math.floor(leftBoundary / (chartBarWidth + chartBarSpacing));
 		let endArrayIndex = Math.min(Math.ceil(rightBoundary / (chartBarWidth + chartBarSpacing)), data.length);
@@ -110,13 +111,12 @@ export default function useBarChart(
 		startX
 	]);
 
-	const onCanvasTouchStart = (event: GestureResponderEvent) => {
+	const touchHandler = (touchedX: number, touchedY: number) => {
 		if (rectangles.length === 0) {
 			setTooltip(undefined);
 			return;
 		}
 
-		const touchedX = event.nativeEvent.locationX;
 		let xIndex = -1;
 		let startingXIndex = 0;
 
@@ -135,7 +135,6 @@ export default function useBarChart(
 		}
 		xIndex = rectangles[xIndex]!.dataIndex;
 
-		const touchedY = event.nativeEvent.locationY;
 		let yIndex = 0;
 		let yPassed = 0;
 		let categoryData = data[xIndex]?.values || [];
@@ -143,7 +142,7 @@ export default function useBarChart(
 
 		while (
 			yIndex < categoryData.length &&
-			yPassed < chartHeight - event.nativeEvent.locationY
+			yPassed < chartHeight - touchedY
 		) {
 			const barHeight =
 				((categoryData[yIndex]!.value - minValueCalculated) /
@@ -200,7 +199,9 @@ export default function useBarChart(
 		bottomLabelHeight,
 		font,
 		setTooltip,
-		onCanvasTouchStart,
-		onScroll
+		touchHandler,
+		onScroll,
+		totalHeight,
+		totalWidth
 	};
 }

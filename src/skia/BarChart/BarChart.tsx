@@ -1,5 +1,5 @@
-import { Fragment } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Fragment, useState } from 'react';
+import { ScrollView, View, Text as RNText } from 'react-native';
 import {
   GestureDetector,
   Gesture,
@@ -11,6 +11,7 @@ import { type CommonStyle } from '../common';
 import ToolTip from '../Tooltip';
 import useBarChart from './useBarChart';
 import VerticalLabel from '../Common/VerticalLabel';
+import Popup from '../Popup';
 
 export interface StackValue {
   value: number;
@@ -35,10 +36,11 @@ export interface BarChartProps {
   colors?: Record<string, string>;
   maxValue?: number;
   minValue?: number;
+  renderPopup?: (data: string) => React.ReactNode;
   style?: BarChartStyle;
 }
 
-function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
+function BarChart({ data, colors, maxValue, minValue, style, renderPopup }: BarChartProps) {
   const {
     maxValueCalculated,
     minValueCalculated,
@@ -51,32 +53,44 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
     rectangles,
     verticalLabelWidth,
     chartHeight,
-    scrollAreaWidth,
     strokeWidth,
     tooltip,
     bottomLabelHeight,
     font,
     onScroll,
-    onCanvasTouchStart,
+    touchHandler,
+    totalHeight,
+    totalWidth,
   } = useBarChart(data, style, maxValue, minValue);
 
   const dragGesture = Gesture.Pan()
     .runOnJS(true)
     .onUpdate((e) => {
       onScroll(-e.translationX);
-    })
+    });
+  const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
 
   return (
     <GestureHandlerRootView>
       <View
         style={{
-          width: style?.width,
+          width: totalWidth,
           flexDirection: 'row',
           backgroundColor: style?.backgroundColor,
           paddingLeft: paddingLeft,
           paddingRight: paddingRight,
           paddingTop: paddingTop,
           paddingBottom: paddingBottom,
+        }}
+        ref={(view) => {
+          view?.measureInWindow((fx, fy) => {
+            setViewOffset((prev) => {
+              if (prev.x === fx && prev.y === fy) {
+                return prev;
+              }
+              return { x: fx, y: fy };
+            });
+          });
         }}
       >
         <VerticalLabel
@@ -89,13 +103,6 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
             strokeWidth,
           }}
         />
-        {/* <ScrollView
-        bounces={false}
-        overScrollMode="never"
-        contentContainerStyle={{ width: scrollAreaWidth }}
-        horizontal
-        onScroll={onScroll}
-      > */}
         <GestureDetector gesture={dragGesture}>
           <Canvas
             style={{
@@ -104,7 +111,12 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
               paddingRight: 50,
               backgroundColor: 'red',
             }}
-            onTouchStart={onCanvasTouchStart}
+            onTouchStart={(event) =>
+              touchHandler(
+                event.nativeEvent.locationX,
+                event.nativeEvent.locationY
+              )
+            }
           >
             {/* X axis */}
             <Line
@@ -150,10 +162,23 @@ function BarChart({ data, colors, maxValue, minValue, style }: BarChartProps) {
                 </Fragment>
               );
             })}
-            <ToolTip data={tooltip} />
           </Canvas>
         </GestureDetector>
-        {/* </ScrollView> */}
+        {tooltip && (
+          <Popup
+            popupData={{
+              x: tooltip.centerX,
+              y: tooltip.centerY,
+              data: tooltip.label,
+            }}
+            popupDimension={{ width: 100, height: 50 }}
+            totalWidth={totalWidth}
+            totalHeight={totalHeight}
+            touchHandler={(x, y) => touchHandler(x - verticalLabelWidth - paddingLeft, y - paddingTop)}
+            viewOffset={viewOffset}
+            renderPopup={renderPopup}
+          />
+        )}
       </View>
     </GestureHandlerRootView>
   );

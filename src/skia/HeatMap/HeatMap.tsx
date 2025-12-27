@@ -3,6 +3,7 @@ import { View, Modal } from 'react-native';
 import { Canvas, Group, Rect } from '@shopify/react-native-skia';
 import useHeatMap from './useHeatMap';
 import type { CommonStyle } from '../common';
+import Popup from '../Popup';
 
 export type DayData = {
   date: string;
@@ -88,51 +89,16 @@ function HeatMap(props: HeatMapProps) {
       </Canvas>
 
       {popupData && props.renderPopup && (
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={popupData !== undefined}
-          onRequestClose={() => {
-            onTouchOutside();
-          }}
-          onTouchStart={(e) => {
-            console.log('modal touched ');
-          }}
-        >
-          <View
-            style={{
-              flex: 1,
-              width: '100%',
-              height: '100%',
-            }}
-            onTouchStart={(e) => {
-              const x = e.nativeEvent.pageX;
-              const y = e.nativeEvent.pageY;
-              touchHandler(x - viewOffset.x, y - viewOffset.y);
-            }}
-          >
-            <View
-              style={[
-                {
-                  position: 'absolute',
-                  left: Math.max(
-                    0,
-                    Math.min(popupData.x, totalWidth - popupDimension.width) +
-                      viewOffset.x
-                  ),
-                  top: Math.max(
-                    0,
-                    Math.min(popupData.y, totalHeight - popupDimension.height) +
-                      viewOffset.y
-                  ),
-                },
-              ]}
-              onTouchStart={(e) => e.stopPropagation()}
-            >
-              {props.renderPopup(popupData.day)}
-            </View>
-          </View>
-        </Modal>
+        <Popup
+          popupData={{ x: popupData.x, y: popupData.y, data: popupData.day }}
+          popupDimension={popupDimension}
+          totalWidth={totalWidth}
+          totalHeight={totalHeight}
+          touchHandler={touchHandler}
+          onTouchOutside={onTouchOutside}
+          renderPopup={props.renderPopup}
+          viewOffset={viewOffset}
+        />
       )}
     </View>
   );
