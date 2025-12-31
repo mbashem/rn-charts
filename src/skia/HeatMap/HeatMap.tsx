@@ -3,7 +3,7 @@ import { View, Modal } from 'react-native';
 import { Canvas, Group, Rect } from '@shopify/react-native-skia';
 import useHeatMap from './useHeatMap';
 import type { CommonStyle } from '../common';
-import Popup from '../Popup';
+import Popup, { type PopupStyle } from '../Popup';
 
 export type DayData = {
   date: string;
@@ -33,7 +33,7 @@ export interface HeatMapProps {
   minValue?: number;
   maxValue?: number;
   ref?: Ref<HandleOutSideTouch | undefined>;
-  renderPopup?: (day: DayData) => React.ReactNode;
+  popupStyle?: PopupStyle<DayData>;
 }
 
 function HeatMap(props: HeatMapProps) {
@@ -88,15 +88,14 @@ function HeatMap(props: HeatMapProps) {
         </Group>
       </Canvas>
 
-      {popupData && props.renderPopup && (
+      {popupData && props.popupStyle && (
         <Popup
           popupData={{ x: popupData.x, y: popupData.y, data: popupData.day }}
-          popupDimension={popupDimension}
           totalWidth={totalWidth}
           totalHeight={totalHeight}
           touchHandler={touchHandler}
           onTouchOutside={onTouchOutside}
-          renderPopup={props.renderPopup}
+          popupStyle={props.popupStyle}
           viewOffset={viewOffset}
         />
       )}

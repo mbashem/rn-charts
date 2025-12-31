@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
 import { rect } from "@shopify/react-native-skia";
 import { arrayFrom, isDefined } from "../../util/util";
-import type { BarData, BarChartStyle } from "./BarChart";
-import type { TooltipData } from "../Tooltip";
-import { useWindowDimensions, type GestureResponderEvent, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
-import { getCommonStyleFont, getFont, getPaddings } from "../common";
+import type { BarData, BarChartStyle, StackValue } from "./BarChart";
+import { useWindowDimensions } from "react-native";
+import { getCommonStyleFont, getPaddings } from "../common";
 
 export default function useBarChart(
 	data: BarData[],
@@ -46,7 +45,7 @@ export default function useBarChart(
 	}, [data, maxValue]);
 
 	const steps = useMemo(() => arrayFrom(1, 0.2), []);
-	const [tooltip, setTooltip] = useState<TooltipData | undefined>(undefined);
+	const [tooltip, setTooltip] = useState<{centerX: number, centerY: number, data: StackValue} | undefined>(undefined);
 	const [startX, setStartX] = useState<number>(0);
 
 	const {
@@ -112,7 +111,7 @@ export default function useBarChart(
 	]);
 
 	const touchHandler = (touchedX: number, touchedY: number) => {
-		if (rectangles.length === 0) {
+		if (rectangles.length === 0 || touchedX < 0 || touchedY < 0 || touchedX >= canvasWidth || touchedY >= chartHeight) {
 			setTooltip(undefined);
 			return;
 		}
@@ -163,7 +162,7 @@ export default function useBarChart(
 			centerX: startingXIndex + chartBarWidth / 2,
 			centerY:
 				chartHeight - yPassed - strokeWidth + lastBarHeight / 2,
-			label: categoryData[yIndex - 1]!.label,
+			data: categoryData[yIndex - 1]!,
 		});
 	};
 

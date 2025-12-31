@@ -1,7 +1,6 @@
 import type { View } from "react-native-reanimated/lib/typescript/Animated";
 import type { DayData, HeatMapProps } from "./HeatMap";
 import { useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { GestureResponderEvent } from "react-native";
 
 function useHeatMap({
   startDate,
@@ -10,8 +9,8 @@ function useHeatMap({
   style,
   minValue,
   maxValue,
-  renderPopup,
-  ref
+  ref,
+  popupStyle
 }: HeatMapProps) {
 
   const cellSize = style?.cellSize ?? 24;
@@ -117,7 +116,7 @@ function useHeatMap({
 
   // --- TOUCH HANDLER ---
   const touchHandler = (x: number, y: number) => {
-    if (!renderPopup || (x < 0 || y < 0 || x >= totalWidth || y >= totalHeight)) {
+    if (!popupStyle?.renderPopup || (x < 0 || y < 0 || x >= totalWidth || y >= totalHeight)) {
       setPopupData(undefined);
       return;
     }

@@ -1,9 +1,8 @@
 import { Skia, type SkPath } from "@shopify/react-native-skia";
 import { useMemo, useState } from "react";
-import { getCommonStyleFont, getFont, getPaddings } from "../common";
+import { getCommonStyleFont, getPaddings } from "../common";
 import type { AreaChartStyle } from "./AreaChart";
 import { isDefined } from "../../util/util";
-import type { GestureResponderEvent } from "react-native";
 
 export interface AreaData {
 	values: number[];
@@ -30,6 +29,7 @@ export interface XLable {
 }
 
 interface TouchLine {
+	col: number;
 	x: number;
 	y: number[];
 	values: number[];
@@ -46,6 +46,8 @@ function useAreaChart(
 	const height = style?.height ?? 200;
 	const width = style?.width ?? 200;
 	const {
+		paddingLeft,
+		paddingTop,
 		paddingHorizontal,
 		paddingVertical,
 	} = getPaddings(style);
@@ -131,13 +133,11 @@ function useAreaChart(
 
 	const [touchLine, setTouchLine] = useState<TouchLine | undefined>(undefined);
 
-	const onCanvasTouchStart = (event: GestureResponderEvent) => {
-		if (data.length === 0 || (data[0]?.values.length ?? 0) === 0) {
+	const touchHandler = (touchedX: number, touchedY: number) => {
+		if (data.length === 0 || (data[0]?.values.length ?? 0) === 0 || touchedX < 0 || touchedY < 0 || touchedX >= chartWidth || touchedY >= areaCanvasHeight) {
 			setTouchLine(undefined);
 			return;
 		}
-
-		const touchedX = event.nativeEvent.locationX;
 
 		const stepX = chartWidth / data[0]!.values.length;
 		const xIndex = Math.round(touchedX / stepX);
@@ -150,6 +150,7 @@ function useAreaChart(
 		const values: number[] = paths.map(path => path.values[xIndex]!);
 
 		setTouchLine({
+			col: xIndex,
 			x: xIndex * stepX,
 			y: yValues,
 			values
@@ -160,6 +161,9 @@ function useAreaChart(
 		paths,
 		chartWidth,
 		canvasHeight,
+		paddingLeft,
+		paddingTop,
+		paddingHorizontal,
 		areaCanvasHeight,
 		labelWidth,
 		maxValue: maxValueCalculated,
@@ -167,7 +171,7 @@ function useAreaChart(
 		xLabelsData,
 		xLabelHeight,
 		font,
-		onCanvasTouchStart,
+		touchHandler,
 		touchLine
 	};
 }

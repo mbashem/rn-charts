@@ -107,11 +107,12 @@ export function usePieChart(
 		return { path, color: color ?? getRandomRGBColor() };
 	});
 
-	const onCanvasTouchStart = (event: GestureResponderEvent) => {
-		if (!showTooltipOnTouch && !onSliceTouch) {
+	const touchHandler = (locationX: number, locationY: number) => {
+		if ((!showTooltipOnTouch && !onSliceTouch) || locationX < 0 || locationY < 0 || locationX >= diameter || locationY >= diameter) {
+			setTooltip(undefined);
 			return;
 		}
-		const { locationX, locationY } = event.nativeEvent;
+
 		let foundPath = false;
 		let angles = 0;
 
@@ -161,6 +162,6 @@ export function usePieChart(
 		radius,
 		tooltip,
 		setTooltip,
-		onCanvasTouchStart,
+		touchHandler,
 	};
 }

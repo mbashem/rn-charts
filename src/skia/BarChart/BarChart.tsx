@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react';
-import { ScrollView, View, Text as RNText } from 'react-native';
+import { View } from 'react-native';
 import {
   GestureDetector,
   Gesture,
@@ -8,10 +8,9 @@ import {
 
 import { Canvas, Rect, Text, vec, Line } from '@shopify/react-native-skia';
 import { type CommonStyle } from '../common';
-import ToolTip from '../Tooltip';
 import useBarChart from './useBarChart';
 import VerticalLabel from '../Common/VerticalLabel';
-import Popup from '../Popup';
+import Popup, { type PopupStyle } from '../Popup';
 
 export interface StackValue {
   value: number;
@@ -36,11 +35,11 @@ export interface BarChartProps {
   colors?: Record<string, string>;
   maxValue?: number;
   minValue?: number;
-  renderPopup?: (data: string) => React.ReactNode;
+  popStyle?: PopupStyle<StackValue>;
   style?: BarChartStyle;
 }
 
-function BarChart({ data, colors, maxValue, minValue, style, renderPopup }: BarChartProps) {
+function BarChart({ data, colors, maxValue, minValue, style, popStyle }: BarChartProps) {
   const {
     maxValueCalculated,
     minValueCalculated,
@@ -169,14 +168,13 @@ function BarChart({ data, colors, maxValue, minValue, style, renderPopup }: BarC
             popupData={{
               x: tooltip.centerX,
               y: tooltip.centerY,
-              data: tooltip.label,
+              data: tooltip.data,
             }}
-            popupDimension={{ width: 100, height: 50 }}
+            popupStyle={popStyle}
             totalWidth={totalWidth}
             totalHeight={totalHeight}
             touchHandler={(x, y) => touchHandler(x - verticalLabelWidth - paddingLeft, y - paddingTop)}
             viewOffset={viewOffset}
-            renderPopup={renderPopup}
           />
         )}
       </View>
