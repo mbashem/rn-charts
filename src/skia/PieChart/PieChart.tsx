@@ -1,19 +1,28 @@
 import { Canvas, Path } from '@shopify/react-native-skia';
 import { type CommonStyle } from '../common';
 import { Text, View } from 'react-native';
-import ToolTip from '../Tooltip';
-import { usePieChart, type PieSlice } from './usePieChart';
+import { usePieChart } from './usePieChart';
 import Popup, { type PopupStyle } from '../Popup';
 import { useState } from 'react';
+
+export interface PopupData {
+  centerX: number;
+  centerY: number;
+  data: PieSlice;
+}
+
+export type PieSlice = {
+  value: number;
+  color?: string;
+  label?: string;
+};
 
 export type PieChartProps = {
   slices: PieSlice[];
   style: PieChartStyles;
   centerView?: React.ReactNode;
   onSliceTouch?: (slice: PieSlice | undefined) => void;
-  renderPopup?: (data: string) => React.ReactNode;
-  popupStyle?: PopupStyle<{ label: string }>;
-  showTooltipOnTouch?: boolean;
+  popupStyle?: PopupStyle<PieSlice>;
 };
 
 export interface PieChartStyles extends CommonStyle {
@@ -22,21 +31,10 @@ export interface PieChartStyles extends CommonStyle {
   innerColor?: string;
 }
 
-function PieChart({
-  style,
-  slices,
-  centerView,
-  onSliceTouch,
-  showTooltipOnTouch,
-  renderPopup,
-  popupStyle
-}: PieChartProps) {
-  const { radius, innerRadius, paths, tooltip, touchHandler } = usePieChart(
-    slices,
-    style,
-    onSliceTouch,
-    showTooltipOnTouch
-  );
+function PieChart(props: PieChartProps) {
+  const { radius, innerRadius, paths, popupData, touchHandler } =
+    usePieChart(props);
+  const { style, centerView, popupStyle } = props;
 
   const paddingTop = style.paddingTop ?? style.padding ?? 0;
   const paddingBottom = style.paddingBottom ?? style.padding ?? 0;
@@ -95,12 +93,12 @@ function PieChart({
           <Path key={index} path={path} color={color} stroke={{ width: 5 }} />
         ))}
       </Canvas>
-      {tooltip && (
+      {popupData && (
         <Popup
           popupData={{
-            x: tooltip.centerX,
-            y: tooltip.centerY,
-            data: {label: tooltip.label},
+            x: popupData.centerX,
+            y: popupData.centerY,
+            data: popupData.data,
           }}
           totalWidth={radius * 2}
           totalHeight={radius * 2}

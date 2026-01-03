@@ -1,7 +1,7 @@
 import { Skia, type SkPath } from "@shopify/react-native-skia";
 import { useMemo, useState } from "react";
 import { getCommonStyleFont, getPaddings } from "../common";
-import type { AreaChartStyle } from "./AreaChart";
+import type { AreaChartProps, AreaChartStyle } from "./AreaChart";
 import { isDefined } from "../../util/util";
 
 export interface AreaData {
@@ -35,12 +35,13 @@ interface TouchLine {
 	values: number[];
 }
 
-function useAreaChart(
-	data: AreaData[],
-	xLabels?: string[],
-	maxValue?: number,
-	minValue?: number,
-	style?: AreaChartStyle,
+function useAreaChart({
+	data,
+	xLabels,
+	maxValue,
+	minValue,
+	style,
+}: AreaChartProps
 ) {
 
 	const height = style?.height ?? 200;

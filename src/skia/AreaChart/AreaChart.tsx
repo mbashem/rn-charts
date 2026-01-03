@@ -16,7 +16,7 @@ export interface AreaChartStyle extends CommonStyle {
   lightenPointsBy?: number;
 }
 
-interface AreaChartProps {
+export interface AreaChartProps {
   data: AreaData[];
   minValue?: number;
   maxValue?: number;
@@ -25,14 +25,7 @@ interface AreaChartProps {
   popupStyle: PopupStyle<{ rowIndex: number; colIndex: number; value: number }>;
 }
 
-function AreaChart({
-  data,
-  xLabels,
-  minValue: minValueProp,
-  maxValue: maxValueProp,
-  style,
-  popupStyle,
-}: AreaChartProps) {
+function AreaChart(props: AreaChartProps) {
   const {
     minValue,
     maxValue,
@@ -48,7 +41,9 @@ function AreaChart({
     font,
     touchLine,
     touchHandler,
-  } = useAreaChart(data, xLabels, maxValueProp, minValueProp, style);
+  } = useAreaChart(props);
+  const { style, popupStyle } = props;
+
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   console.log('AreaChart render', { touchLine });
 

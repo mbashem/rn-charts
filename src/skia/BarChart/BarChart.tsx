@@ -28,6 +28,8 @@ export interface BarChartStyle extends CommonStyle {
   height?: number;
   barWidth?: number;
   barSpacing?: number;
+  firstBarLeadingSpacing?: number;
+  lastBarTrailingSpacing?: number;
 }
 
 export interface BarChartProps {
@@ -35,11 +37,11 @@ export interface BarChartProps {
   colors?: Record<string, string>;
   maxValue?: number;
   minValue?: number;
-  popStyle?: PopupStyle<StackValue>;
+  popupStyle?: PopupStyle<StackValue>;
   style?: BarChartStyle;
 }
 
-function BarChart({ data, colors, maxValue, minValue, style, popStyle }: BarChartProps) {
+function BarChart(props: BarChartProps) {
   const {
     maxValueCalculated,
     minValueCalculated,
@@ -60,13 +62,14 @@ function BarChart({ data, colors, maxValue, minValue, style, popStyle }: BarChar
     touchHandler,
     totalHeight,
     totalWidth,
-  } = useBarChart(data, style, maxValue, minValue);
+  } = useBarChart(props);
 
   const dragGesture = Gesture.Pan()
     .runOnJS(true)
-    .onUpdate((e) => {
-      onScroll(-e.translationX);
+    .onChange((event) => {
+      onScroll(-event.changeX);
     });
+
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
 
   return (
@@ -75,7 +78,7 @@ function BarChart({ data, colors, maxValue, minValue, style, popStyle }: BarChar
         style={{
           width: totalWidth,
           flexDirection: 'row',
-          backgroundColor: style?.backgroundColor,
+          backgroundColor: props.style?.backgroundColor,
           paddingLeft: paddingLeft,
           paddingRight: paddingRight,
           paddingTop: paddingTop,
@@ -143,9 +146,9 @@ function BarChart({ data, colors, maxValue, minValue, style, popStyle }: BarChar
                     font={font}
                   />
                   {bar.bars.map((item, yIndex) => {
-                    let currentData = data[xIndex]!.values[yIndex]!;
+                    let currentData = props.data[xIndex]!.values[yIndex]!;
                     let color =
-                      colors?.[currentData.id ?? currentData.label] ||
+                      props?.colors?.[currentData.id ?? currentData.label] ||
                       '#4A90E2';
                     return (
                       <Rect
@@ -170,10 +173,12 @@ function BarChart({ data, colors, maxValue, minValue, style, popStyle }: BarChar
               y: tooltip.centerY,
               data: tooltip.data,
             }}
-            popupStyle={popStyle}
+            popupStyle={props.popupStyle}
             totalWidth={totalWidth}
             totalHeight={totalHeight}
-            touchHandler={(x, y) => touchHandler(x - verticalLabelWidth - paddingLeft, y - paddingTop)}
+            touchHandler={(x, y) =>
+              touchHandler(x - verticalLabelWidth - paddingLeft, y - paddingTop)
+            }
             viewOffset={viewOffset}
           />
         )}

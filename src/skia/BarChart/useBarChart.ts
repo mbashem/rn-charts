@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
 import { rect } from "@shopify/react-native-skia";
 import { arrayFrom, isDefined } from "../../util/util";
-import type { BarData, BarChartStyle, StackValue } from "./BarChart";
+import type { BarData, BarChartStyle, StackValue, BarChartProps } from "./BarChart";
 import { useWindowDimensions } from "react-native";
 import { getCommonStyleFont, getPaddings } from "../common";
 
 export default function useBarChart(
-	data: BarData[],
-	style?: BarChartStyle,
-	maxValue?: number,
-	minValue?: number
+	{
+		data,
+		style,
+		maxValue,
+		minValue
+	}: BarChartProps
 ) {
 	const { maxValueCalculated, minValueCalculated } = useMemo(() => {
 		if (isDefined(maxValue) && isDefined(minValue)) {
@@ -45,7 +47,7 @@ export default function useBarChart(
 	}, [data, maxValue]);
 
 	const steps = useMemo(() => arrayFrom(1, 0.2), []);
-	const [tooltip, setTooltip] = useState<{centerX: number, centerY: number, data: StackValue} | undefined>(undefined);
+	const [tooltip, setTooltip] = useState<{ centerX: number, centerY: number, data: StackValue; } | undefined>(undefined);
 	const [startX, setStartX] = useState<number>(0);
 
 	const {
@@ -65,23 +67,25 @@ export default function useBarChart(
 	const { width: windowWidth } = useWindowDimensions();
 	const totalWidth = style?.width ?? windowWidth;
 	const totalHeight = chartHeight;
+	
+	const initialSpacing = style?.firstBarLeadingSpacing ?? 0;
+	const endSpacing = style?.lastBarTrailingSpacing ?? chartBarSpacing;
 
-	const scrollAreaWidth = data.length * (chartBarWidth + chartBarSpacing);
+	const scrollAreaWidth = initialSpacing + data.length * chartBarWidth + (Math.max(0, data.length - 1) * chartBarSpacing) + endSpacing;
 	const canvasWidth = Math.min(scrollAreaWidth, totalWidth - verticalLabelWidth - paddingRight - paddingLeft);
 	const { font } = getCommonStyleFont(style);
-
 
 	const rectangles = useMemo(() => {
 		let leftBoundary = Math.max(0, startX);
 		let rightBoundary = startX + totalWidth;
 
-		let startArrayIndex = Math.floor(leftBoundary / (chartBarWidth + chartBarSpacing));
+		let startArrayIndex = Math.floor(Math.max(leftBoundary - initialSpacing, 0) / (chartBarWidth + chartBarSpacing));
 		let endArrayIndex = Math.min(Math.ceil(rightBoundary / (chartBarWidth + chartBarSpacing)), data.length);
 
 		return data.slice(startArrayIndex, endArrayIndex)
 			.map((bar, xIndex) => {
 				let previousHeight = 0;
-				const x = (xIndex + startArrayIndex) * (chartBarWidth + chartBarSpacing) - leftBoundary;
+				const x = initialSpacing + (xIndex + startArrayIndex) * (chartBarWidth + chartBarSpacing) - leftBoundary;
 				return {
 					bars: bar.values.map((item, yIndex) => {
 						const barHeight =

@@ -1,15 +1,7 @@
 import { useState } from "react";
-import type { PieChartStyles } from "./PieChart";
-import type { TooltipData } from "../Tooltip";
+import type { PieChartProps, PieChartStyles, PieSlice, PopupData } from "./PieChart";
 import { rect, Skia } from "@shopify/react-native-skia";
 import { getRandomRGBColor } from "../common";
-import type { GestureResponderEvent } from "react-native";
-
-export type PieSlice = {
-	value: number;
-	color?: string;
-	label?: string;
-};
 
 function deegreesToRadians(degrees: number): number {
 	return (degrees * Math.PI) / 180;
@@ -38,13 +30,13 @@ function getCircularPoints(
 	return [x1, y1, x2, y2];
 }
 
-export function usePieChart(
-	slices: PieSlice[],
-	style: PieChartStyles = {},
-	onSliceTouch?: (slice: PieSlice | undefined) => void,
-	showTooltipOnTouch?: boolean
+export function usePieChart({
+	slices,
+	style,
+	onSliceTouch
+}: PieChartProps
 ) {
-	const [tooltip, setTooltip] = useState<TooltipData | undefined>(undefined);
+	const [popupData, setPopupData] = useState<PopupData | undefined>(undefined);
 
 	const radius = style.radius ?? 150;
 	const diameter = radius * 2;
@@ -108,8 +100,8 @@ export function usePieChart(
 	});
 
 	const touchHandler = (locationX: number, locationY: number) => {
-		if ((!showTooltipOnTouch && !onSliceTouch) || locationX < 0 || locationY < 0 || locationX >= diameter || locationY >= diameter) {
-			setTooltip(undefined);
+		if (!onSliceTouch || locationX < 0 || locationY < 0 || locationX >= diameter || locationY >= diameter) {
+			setPopupData(undefined);
 			return;
 		}
 
@@ -134,13 +126,11 @@ export function usePieChart(
 				const centerX = (outerX + innerX) / 2;
 
 				onSliceTouch?.(slice);
-				if (showTooltipOnTouch ?? true) {
-					setTooltip({
-						centerX: centerX,
-						centerY: centerY,
-						label: label,
-					});
-				}
+				setPopupData({
+					centerX: centerX,
+					centerY: centerY,
+					data: slice,
+				});
 
 				foundPath = true;
 				return;
@@ -152,7 +142,7 @@ export function usePieChart(
 		if (!foundPath) {
 			console.log('No slice found at touch location');
 			onSliceTouch?.(undefined);
-			setTooltip(undefined);
+			setPopupData(undefined);
 		}
 	};
 	return {
@@ -160,8 +150,7 @@ export function usePieChart(
 		diameter,
 		innerRadius,
 		radius,
-		tooltip,
-		setTooltip,
+		popupData,
 		touchHandler,
 	};
 }
