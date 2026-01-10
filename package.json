@@ -2,8 +2,22 @@
   "name": "@bashem/rn-charts",
   "version": "0.0.1",
   "description": "Experimental Charts Library",
-  "main": "./lib/module/index.js",
-  "types": "./lib/typescript/src/index.d.ts",
+  "keywords": [
+    "react-native",
+    "ios",
+    "android"
+  ],
+  "homepage": "https://github.com/mbashem/rn-charts#readme",
+  "bugs": {
+    "url": "https://github.com/mbashem/rn-charts/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbashem/rn-charts.git"
+  },
+  "license": "MIT",
+  "author": "Bashem <example@github.com> (https://github.com/mbashem)",
+  "type": "commonjs",
   "exports": {
     ".": {
       "source": "./src/index.tsx",
@@ -11,6 +25,12 @@
       "default": "./lib/module/index.js"
     },
     "./package.json": "./package.json"
+  },
+  "main": "./lib/module/index.js",
+  "types": "./lib/typescript/src/index.d.ts",
+  "directories": {
+    "example": "example",
+    "lib": "lib"
   },
   "files": [
     "src",
@@ -31,6 +51,9 @@
     "!**/__mocks__",
     "!**/.*"
   ],
+  "workspaces": [
+    "example"
+  ],
   "scripts": {
     "example": "yarn workspace rn-charts-example",
     "test": "jest",
@@ -40,23 +63,13 @@
     "prepare": "bob build",
     "release": "release-it --only-version"
   },
-  "keywords": [
-    "react-native",
-    "ios",
-    "android"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mbashem/rn-charts.git"
-  },
-  "author": "Bashem <example@github.com> (https://github.com/mbashem)",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/mbashem/rn-charts/issues"
-  },
-  "homepage": "https://github.com/mbashem/rn-charts#readme",
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+  "dependencies": {
+    "@shopify/react-native-skia": "v2.0.0-next.4",
+    "react-native-gesture-handler": "^2.28.0",
+    "react-native-reanimated": "^3.19.5",
+    "react-native-worklets": "^0.4.2",
+    "react": "19.0.0",
+    "react-native": "0.79.6"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^19.6.0",
@@ -89,17 +102,9 @@
     "react": "^19.0.0",
     "react-native": "^0.79.5"
   },
-  "dependencies": {
-    "@shopify/react-native-skia": "v2.0.0-next.4",
-    "react-native-gesture-handler": "^2.28.0",
-    "react-native-reanimated": "^3.19.5",
-    "react-native-worklets": "^0.4.2",
-    "react": "19.0.0",
-    "react-native": "0.79.6"
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
-  "workspaces": [
-    "example"
-  ],
   "packageManager": "yarn@3.6.1",
   "jest": {
     "preset": "react-native",
