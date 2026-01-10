@@ -9,9 +9,7 @@ import {
 import {
   Canvas,
   Path,
-  Skia,
   Group,
-  type SkPath,
   Circle,
 } from '@shopify/react-native-skia';
 import { type CommonStyle } from '../common';
