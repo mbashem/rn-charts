@@ -32,7 +32,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace rn-simple-charts-example",
+    "example": "yarn workspace rn-charts-example",
     "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
@@ -47,14 +47,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mbashem/rn-simple-charts.git"
+    "url": "git+https://github.com/mbashem/rn-charts.git"
   },
   "author": "Bashem <example@github.com> (https://github.com/mbashem)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mbashem/rn-simple-charts/issues"
+    "url": "https://github.com/mbashem/rn-charts/issues"
   },
-  "homepage": "https://github.com/mbashem/rn-simple-charts#readme",
+  "homepage": "https://github.com/mbashem/rn-charts#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
