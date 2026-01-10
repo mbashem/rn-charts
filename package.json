@@ -1,5 +1,5 @@
 {
-  "name": "rn-charts",
+  "name": "@bashem/rn-charts",
   "version": "0.0.1",
   "description": "Experimental Charts Library",
   "main": "./lib/module/index.js",
