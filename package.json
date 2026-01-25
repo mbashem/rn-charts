@@ -1,6 +1,6 @@
 {
   "name": "@bashem/rn-charts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Experimental Charts Library",
   "keywords": [
     "react-native",
@@ -103,7 +103,8 @@
     "react-native": "^0.79.5"
   },
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "packageManager": "yarn@3.6.1",
   "jest": {
@@ -120,6 +121,7 @@
   },
   "release-it": {
     "git": {
+      "requireCleanWorkingDir": false,
       "commitMessage": "chore: release ${version}",
       "tagName": "v${version}"
     },
