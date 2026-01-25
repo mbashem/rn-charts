@@ -1,4 +1,6 @@
-# Contributing
+⚠️ Not ready for contribution
+
+<!-- # Contributing
 
 Contributions are always welcome, no matter how large or small!
 
@@ -129,4 +131,4 @@ When you're sending a pull request:
 - Verify that linters and tests are passing.
 - Review the documentation to make sure it looks good.
 - Follow the pull request template when opening a pull request.
-- For pull requests that change the API or implementation, discuss with maintainers first by opening an issue.
+- For pull requests that change the API or implementation, discuss with maintainers first by opening an issue. -->

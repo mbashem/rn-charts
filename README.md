@@ -1,12 +1,12 @@
 # rn-simple-charts
 
-Experimental Charts Library
+Experimental Charts Library. ⚠️ Not ready for use.
 
 ## Installation
 
 
 ```sh
-npm install rn-simple-charts
+npm install @bashem/rn-charts
 ```
 
 
@@ -14,11 +14,7 @@ npm install rn-simple-charts
 
 
 ```js
-import { multiply } from 'rn-simple-charts';
-
-// ...
-
-const result = await multiply(3, 7);
+// Comming soon...
 ```
 
 
