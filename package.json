@@ -1,6 +1,6 @@
 {
   "name": "@bashem/rn-charts",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Experimental Charts Library",
   "keywords": [
     "react-native",
