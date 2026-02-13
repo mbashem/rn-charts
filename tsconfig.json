@@ -2,14 +2,18 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "rn-simple-charts": ["./src/index"]
+      "rn-charts": [
+        "./src/index"
+      ]
     },
     "allowUnreachableCode": true,
     "allowUnusedLabels": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "jsx": "react-jsx",
-    "lib": ["ESNext"],
+    "jsx": "react-native",
+    "lib": [
+      "ESNext"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,

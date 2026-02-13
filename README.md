@@ -1,4 +1,4 @@
-# rn-simple-charts
+# rn-charts
 
 Experimental Charts Library. ⚠️ Not ready for use.
 
@@ -6,7 +6,7 @@ Experimental Charts Library. ⚠️ Not ready for use.
 
 
 ```sh
-npm install @bashem/rn-charts
+npm install @bashem/rn-charts 
 ```
 
 

@@ -1,5 +1,5 @@
 import { Text, View, StyleSheet } from 'react-native';
-import { multiply } from 'rn-simple-charts';
+import { multiply } from '@/packages/rn-charts/src';
 
 const result = multiply(3, 7);
 
