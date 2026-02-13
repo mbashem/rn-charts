@@ -6,7 +6,7 @@ Experimental Charts Library. ⚠️ Not ready for use.
 
 
 ```sh
-npm install @bashem/rn-charts 
+npm install @bashem/rn-charts @shopify/react-native-skia@2.2.12 react-native-gesture-handler@2.28.0
 ```
 
 
