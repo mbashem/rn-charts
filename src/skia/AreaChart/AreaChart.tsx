@@ -1,19 +1,26 @@
 // AreaChart.tsx
 import { Canvas, Circle, Group, Path, Text } from '@shopify/react-native-skia';
-import { type CommonStyle } from '../common';
-import VerticalLabel from '../Common/VerticalLabel';
+import { type CommonStyle, type VerticalLabelStyle } from '../common';
 import { View } from 'react-native';
-import useAreaChart, { type AreaData } from './useAreaChart';
+import useAreaChart from './useAreaChart';
 import { useState } from 'react';
 import { lighten } from '../../util/colors';
 import Popup, { type PopupStyle } from '../Popup';
+import VerticalLabelView from "../Common/VerticalLabelView";
 
-export interface AreaChartStyle extends CommonStyle {
+export interface AreaData {
+  values: number[];
+  label?: string;
+  color?: string;
+}
+
+export interface AreaChartStyle extends CommonStyle, VerticalLabelStyle {
   width: number;
   height: number;
   showPoints?: boolean;
   pointRadius?: number;
   lightenPointsBy?: number;
+  strokeWidth?: number;
 }
 
 export interface AreaChartProps {
@@ -21,17 +28,23 @@ export interface AreaChartProps {
   minValue?: number;
   maxValue?: number;
   xLabels?: string[];
+  yLabels: number[];
+  yLabelView?: (percentage: number, min: number, max: number) => JSX.Element;
   style?: AreaChartStyle;
-  popupStyle: PopupStyle<{ rowIndex: number; colIndex: number; value: number }>;
+  popupStyle: PopupStyle<{ rowIndex: number; colIndex: number; value: number; }>;
 }
 
-function AreaChart(props: AreaChartProps) {
+function AreaChart({ yLabelView, ...props }: AreaChartProps) {
   const {
     minValue,
     maxValue,
     canvasHeight,
     areaCanvasHeight,
-    labelWidth,
+    verticalLabelWidth,
+    strokeWidth,
+    verticalLabelStrokeWidth,
+    yLabels,
+    setVerticalLabelWidth,
     chartWidth,
     paths,
     xLabelsData,
@@ -45,7 +58,6 @@ function AreaChart(props: AreaChartProps) {
   const { style, popupStyle } = props;
 
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
-  console.log('AreaChart render', { touchLine });
 
   return (
     <View
@@ -61,16 +73,22 @@ function AreaChart(props: AreaChartProps) {
         });
       }}
     >
-      <VerticalLabel
-        minValue={minValue}
-        maxValue={maxValue}
-        styles={{
-          height: areaCanvasHeight,
-          width: labelWidth,
-          fontSize: style?.fontSize,
-        }}
-        labelCount={5}
-      />
+      {yLabelView &&
+        <VerticalLabelView
+          onLayout={(event) => {
+            setVerticalLabelWidth(event.nativeEvent.layout.width);
+          }}
+          labelPercentages={yLabels}
+          styles={{
+            width: props.style?.yLabelWidth,
+            height: areaCanvasHeight,
+            strokeWidth: verticalLabelStrokeWidth,
+            backgroundColor: props.style?.yLabelBackgroundColor
+          }}
+        >
+          {percentage => yLabelView(percentage, minValue, maxValue)}
+        </VerticalLabelView>
+      }
 
       <Canvas
         style={{
@@ -123,11 +141,11 @@ function AreaChart(props: AreaChartProps) {
               value: touchLine.values[index]!,
             },
           }))}
-          totalWidth={chartWidth + labelWidth + paddingHorizontal}
+          totalWidth={chartWidth + verticalLabelWidth + paddingHorizontal}
           totalHeight={canvasHeight}
           touchHandler={(x, y) => {
             console.log('Popup touchHandler', x, y);
-            touchHandler(x - labelWidth - paddingLeft, y - paddingTop);
+            touchHandler(x - verticalLabelWidth - paddingLeft, y - paddingTop);
           }}
           viewOffset={viewOffset}
           popupStyle={popupStyle}

@@ -10,7 +10,8 @@ export default function useBarChart(
 		data,
 		style,
 		maxValue,
-		minValue
+		minValue,
+		yLabels
 	}: BarChartProps
 ) {
 	const { maxValueCalculated, minValueCalculated } = useMemo(() => {
@@ -59,11 +60,11 @@ export default function useBarChart(
 
 	const chartBarWidth = style?.barWidth ?? 100;
 	const chartBarSpacing = style?.barSpacing ?? 0;
-	const verticalLabelWidth = 35;
+
+	const [verticalLabelWidth, setVerticalLabelWidth] = useState(style?.yLabelWidth ?? 0);
 	const chartHeight = style?.height ?? 200;
-	const strokeWidth = 2;
+	const strokeWidth = style?.strokeWidth ?? 2;
 	const bottomLabelHeight = 20;
-	const canvasHeight = chartHeight + bottomLabelHeight;
 	const { width: windowWidth } = useWindowDimensions();
 	const totalWidth = style?.width ?? windowWidth;
 	const totalHeight = chartHeight;
@@ -163,7 +164,7 @@ export default function useBarChart(
 		}
 
 		setTooltip({
-			centerX: startingXIndex + chartBarWidth / 2,
+			centerX: startingXIndex + chartBarWidth / 2 + verticalLabelWidth,
 			centerY:
 				chartHeight - yPassed - strokeWidth + lastBarHeight / 2,
 			data: categoryData[yIndex - 1]!,
@@ -184,7 +185,6 @@ export default function useBarChart(
 	return {
 		maxValueCalculated,
 		minValueCalculated,
-		canvasHeight,
 		canvasWidth,
 		steps,
 		scrollAreaWidth,
@@ -194,6 +194,7 @@ export default function useBarChart(
 		paddingLeft,
 		paddingRight,
 		verticalLabelWidth,
+		setVerticalLabelWidth,
 		chartBarWidth,
 		chartBarSpacing,
 		strokeWidth,
@@ -205,6 +206,7 @@ export default function useBarChart(
 		touchHandler,
 		onScroll,
 		totalHeight,
-		totalWidth
+		totalWidth,
+		yLabels
 	};
 }

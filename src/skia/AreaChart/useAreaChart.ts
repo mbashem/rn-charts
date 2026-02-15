@@ -4,12 +4,6 @@ import { getCommonStyleFont, getPaddings } from "../common";
 import type { AreaChartProps, AreaChartStyle } from "./AreaChart";
 import { isDefined } from "../../util/util";
 
-export interface AreaData {
-	values: number[];
-	label?: string;
-	color?: string;
-}
-
 interface Point {
 	x: number;
 	y: number;
@@ -23,16 +17,16 @@ export interface PathData {
 	label?: string;
 }
 
-export interface XLable {
-	label: string;
-	xPosition: number;
-}
-
 interface TouchLine {
 	col: number;
 	x: number;
 	y: number[];
 	values: number[];
+}
+
+interface XLabel {
+	label: string;
+	xPosition: number;
 }
 
 function useAreaChart({
@@ -41,6 +35,7 @@ function useAreaChart({
 	maxValue,
 	minValue,
 	style,
+	yLabels,
 }: AreaChartProps
 ) {
 
@@ -54,8 +49,10 @@ function useAreaChart({
 	} = getPaddings(style);
 
 	const canvasHeight = height - paddingVertical;
-	const labelWidth = 30;
-	const chartWidth = width - labelWidth - paddingHorizontal;
+	const [verticalLabelWidth, setVerticalLabelWidth] = useState(style?.yLabelWidth ?? 0);
+	const strokeWidth = style?.strokeWidth ?? 2
+	const verticalLabelStrokeWidth = style?.yLabelStrokeWidth ?? strokeWidth
+	const chartWidth = width - verticalLabelWidth - paddingHorizontal;
 	const xLabelHeight = xLabels && xLabels.length > 0 ? (style?.fontSize ?? 12) + 5 : 0;
 	const areaCanvasHeight = canvasHeight - xLabelHeight;
 
@@ -117,7 +114,7 @@ function useAreaChart({
 		return pathData;
 	}, [data, chartWidth, maxValueCalculated, minValueCalculated]);
 
-	const xLabelsData: XLable[] = useMemo(() => {
+	const xLabelsData: XLabel[] = useMemo(() => {
 		if (!xLabels || xLabels.length === 0) {
 			return [];
 		}
@@ -152,7 +149,7 @@ function useAreaChart({
 
 		setTouchLine({
 			col: xIndex,
-			x: xIndex * stepX,
+			x: xIndex * stepX + verticalLabelWidth,
 			y: yValues,
 			values
 		});
@@ -166,7 +163,11 @@ function useAreaChart({
 		paddingTop,
 		paddingHorizontal,
 		areaCanvasHeight,
-		labelWidth,
+		strokeWidth,
+		verticalLabelStrokeWidth,
+		yLabels,
+		verticalLabelWidth,
+		setVerticalLabelWidth,
 		maxValue: maxValueCalculated,
 		minValue: minValueCalculated,
 		xLabelsData,

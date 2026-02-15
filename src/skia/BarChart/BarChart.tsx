@@ -5,12 +5,12 @@ import {
   Gesture,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
-
 import { Canvas, Rect, Text, vec, Line } from '@shopify/react-native-skia';
-import { type CommonStyle } from '../common';
+
+import { type CommonStyle, type VerticalLabelStyle } from '../common';
 import useBarChart from './useBarChart';
-import VerticalLabel from '../Common/VerticalLabel';
 import Popup, { type PopupStyle } from '../Popup';
+import VerticalLabelView from "../Common/VerticalLabelView";
 
 export interface StackValue {
   value: number;
@@ -23,29 +23,33 @@ export interface BarData {
   label?: string;
 }
 
-export interface BarChartStyle extends CommonStyle {
+export interface BarChartStyle extends CommonStyle, VerticalLabelStyle {
   width?: number;
   height?: number;
   barWidth?: number;
   barSpacing?: number;
   firstBarLeadingSpacing?: number;
   lastBarTrailingSpacing?: number;
+  strokeWidth?: number;
 }
 
 export interface BarChartProps {
   data: BarData[];
   colors?: Record<string, string>;
+  yLabels: number[];
+  yLabelView?: (percentage: number, min: number, max: number) => JSX.Element;
+  xLabelView?: (label?: string) => JSX.Element;
   maxValue?: number;
   minValue?: number;
   popupStyle?: PopupStyle<StackValue>;
   style?: BarChartStyle;
 }
 
-function BarChart(props: BarChartProps) {
+function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
   const {
     maxValueCalculated,
     minValueCalculated,
-    canvasHeight,
+    yLabels,
     canvasWidth,
     paddingRight,
     paddingLeft,
@@ -53,6 +57,7 @@ function BarChart(props: BarChartProps) {
     paddingTop,
     rectangles,
     verticalLabelWidth,
+    setVerticalLabelWidth,
     chartHeight,
     strokeWidth,
     tooltip,
@@ -77,10 +82,10 @@ function BarChart(props: BarChartProps) {
       <View
         style={{
           width: totalWidth,
-          flexDirection: 'row',
+          flexDirection: 'column',
           backgroundColor: props.style?.backgroundColor,
-          paddingLeft: paddingLeft,
-          paddingRight: paddingRight,
+          paddingStart: paddingLeft,
+          paddingEnd: paddingRight,
           paddingTop: paddingTop,
           paddingBottom: paddingBottom,
         }}
@@ -95,77 +100,91 @@ function BarChart(props: BarChartProps) {
           });
         }}
       >
-        <VerticalLabel
-          maxValue={maxValueCalculated}
-          minValue={minValueCalculated}
-          labelCount={6}
-          styles={{
-            width: verticalLabelWidth,
-            height: chartHeight,
-            strokeWidth,
-          }}
-        />
-        <GestureDetector gesture={dragGesture}>
-          <Canvas
-            style={{
-              width: canvasWidth,
-              height: canvasHeight,
-              paddingRight: 50,
-              backgroundColor: 'red',
-            }}
-            onTouchStart={(event) =>
-              touchHandler(
-                event.nativeEvent.locationX,
-                event.nativeEvent.locationY
-              )
-            }
-          >
-            {/* X axis */}
-            <Line
-              p1={vec(0, chartHeight)}
-              p2={vec(canvasWidth, chartHeight)}
-              color="white"
-              strokeWidth={strokeWidth}
-            />
+        <View style={{ flexDirection: "row", height: chartHeight }}>
+          {
+            yLabelView && (<VerticalLabelView
+              onLayout={(event) => {
+                setVerticalLabelWidth(event.nativeEvent.layout.width);
+              }}
+              labelPercentages={yLabels}
+              styles={{
+                width: props.style?.yLabelWidth,
+                height: chartHeight,
+                strokeWidth,
+                backgroundColor: props.style?.yLabelBackgroundColor
+              }}
+            >
+              {percentage => yLabelView(percentage, minValueCalculated, maxValueCalculated)}
+            </VerticalLabelView>)
+          }
+          <GestureDetector gesture={dragGesture}>
+            <Canvas
+              style={{
+                width: canvasWidth,
+                height: chartHeight,
+              }}
+              onTouchStart={(event) =>
+                touchHandler(
+                  event.nativeEvent.locationX,
+                  event.nativeEvent.locationY
+                )
+              }
+            >
+              {/* X axis */}
+              <Line
+                p1={vec(0, chartHeight)}
+                p2={vec(canvasWidth, chartHeight)}
+                color="white"
+                strokeWidth={strokeWidth}
+              />
 
-            {/* Bars */}
+              {/* Bars */}
 
+              {rectangles.map((bar, xIndex) => {
+                if (bar.bars.length === 0) return null;
+                return (
+                  <Fragment key={xIndex}>
+                    {bar.bars.map((item, yIndex) => {
+                      let currentData = props.data[xIndex]!.values[yIndex]!;
+                      let color =
+                        props?.colors?.[currentData.id ?? currentData.label] ||
+                        '#4A90E2';
+                      return (
+                        <Rect
+                          key={xIndex + '-' + yIndex}
+                          x={item.x}
+                          y={item.y}
+                          width={item.width}
+                          height={item.height}
+                          color={color}
+                        />
+                      );
+                    })}
+                  </Fragment>
+                );
+              })}
+            </Canvas>
+          </GestureDetector>
+        </View>
+        {
+          xLabelView &&
+          <View style={{ height: bottomLabelHeight }}>
             {rectangles.map((bar, xIndex) => {
-              if (bar.bars.length === 0) return null;
-              return (
-                <Fragment key={xIndex}>
-                  <Text
-                    x={bar.bars[0]!.x}
-                    y={
-                      chartHeight +
-                      font.getSize() +
-                      (bottomLabelHeight - font.getSize()) / 2
-                    }
-                    text={bar.label ?? ''}
-                    color="white"
-                    font={font}
-                  />
-                  {bar.bars.map((item, yIndex) => {
-                    let currentData = props.data[xIndex]!.values[yIndex]!;
-                    let color =
-                      props?.colors?.[currentData.id ?? currentData.label] ||
-                      '#4A90E2';
-                    return (
-                      <Rect
-                        key={xIndex + '-' + yIndex}
-                        x={item.x}
-                        y={item.y}
-                        width={item.width}
-                        height={item.height}
-                        color={color}
-                      />
-                    );
-                  })}
-                </Fragment>
-              );
+              return <View
+                key={xIndex}
+                style={{
+                  position: "absolute",
+                  left: verticalLabelWidth + bar.x,
+                  top: 0,
+                  backgroundColor: "green",
+                  zIndex: 1000,
+                }}
+              >
+                {xLabelView(bar.label)}
+              </View>;
             })}
-          </Canvas>
-        </GestureDetector>
+          </View>
+        }
         {tooltip && (
           <Popup
             popupData={{
@@ -176,9 +195,10 @@ function BarChart(props: BarChartProps) {
             popupStyle={props.popupStyle}
             totalWidth={totalWidth}
             totalHeight={totalHeight}
-            touchHandler={(x, y) =>
-              touchHandler(x - verticalLabelWidth - paddingLeft, y - paddingTop)
-            }
+            touchHandler={(x, y) => {
+              console.log("Popup ", tooltip, " y: ", y);
+              touchHandler(x - verticalLabelWidth - paddingLeft, y);
+            }}
             viewOffset={viewOffset}
           />
         )}
