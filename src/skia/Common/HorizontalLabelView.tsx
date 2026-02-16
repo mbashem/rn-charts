@@ -5,17 +5,18 @@ import React, { useMemo, useState } from "react";
 interface HorizontalLabelStyle extends CommonStyle {
 	width?: number;
 	height?: number;
+	left?: number;
 }
 
 interface HorizontalLabelProps {
-	labels: string[];
+	labels: (string | undefined)[];
 	positions: number[];
 	styles: HorizontalLabelStyle;
 	onLayout?: (event: LayoutChangeEvent) => void;
-	children: (label: string) => JSX.Element;
+	children: (label?: string) => JSX.Element;
 }
 
-function VerticalLabelView({
+function HorizontalLabelView({
 	labels,
 	positions,
 	styles,
@@ -23,8 +24,10 @@ function VerticalLabelView({
 	children
 }: HorizontalLabelProps) {
 	const {
+		width,
 		height,
 		backgroundColor,
+		left
 	} = styles;
 	const [maxHeight, setMaxHeight] = useState(height);
 	useMemo(() => {
@@ -34,10 +37,13 @@ function VerticalLabelView({
 	return (
 		<View
 			style={{
+				left,
+				width,
 				height: (maxHeight ?? 0),
 				backgroundColor,
 				flexDirection: "row-reverse",
-				justifyContent: "flex-end"
+				justifyContent: "flex-end",
+				overflow: "hidden"
 			}}
 			onLayout={(event) => {
 				onLayout?.(event);
@@ -46,7 +52,7 @@ function VerticalLabelView({
 			<View style={{ position: "relative", height: (maxHeight ?? 0), paddingVertical: 0}}>
 				{labels.map((label, index) => {
 					return <View
-						key={label}
+						key={label + " " + index}
 						style={{ position: "absolute", left: positions[index], top: 0, backgroundColor: "purple" }}
 						onLayout={(event) => {
 							let height = event.nativeEvent.layout.height
@@ -69,4 +75,4 @@ function VerticalLabelView({
 	);
 }
 
-export default VerticalLabelView;
+export default HorizontalLabelView;

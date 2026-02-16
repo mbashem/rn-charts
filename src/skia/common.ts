@@ -1,5 +1,4 @@
-import { listFontFamilies, matchFont, Skia, TextAlign, type SkFont, type SkParagraph, type SkTextStyle } from "@shopify/react-native-skia";
-import { I18nManager, Platform } from "react-native";
+import { I18nManager } from "react-native";
 
 export interface CommonStyle {
 	padding?: number;
@@ -11,20 +10,6 @@ export interface CommonStyle {
 	paddingRight?: number;
 	backgroundColor?: string;
 	disableRTL?: boolean;
-	font?: SkFont;
-	fontSize?: number;
-}
-
-export interface VerticalLabelStyle {
-	yLabelWidth?: number;
-  yLabelBackgroundColor?: string;
-	yLabelStrokeWidth?: number;
-}
-
-export function getCommonStyleFont(style?: CommonStyle) {
-	const fontSize = style?.font?.getSize() ?? style?.fontSize ?? 12;
-	const font = style?.font ?? getFont(fontSize);
-	return { font, fontSize };
 }
 
 export function getPaddings(style?: CommonStyle) {
@@ -53,38 +38,3 @@ export function getRandomRGBColor() {
 	const b = Math.floor(Math.random() * 256);
 	return `rgb(${r},${g},${b})`;
 };
-
-export const systemFontFamilies = Platform.select({
-	ios: ["Helvetica", "Arial", "Courier"],
-	android: ["roboto-flex", "sans-serif", "Roboto", "serif", "monospace"],
-	default: ["sans-serif", "serif"],
-});
-
-export function getFont(size: number = 14): SkFont {
-	const fontFamily = systemFontFamilies[0];
-	// console.log("Available system font families:", listFontFamilies());
-	// console.log("Using font family:", fontFamily, systemFontFamilies);
-	const font = matchFont({
-		fontFamily,
-		fontSize: size,
-		fontStyle: "normal",
-		fontWeight: "normal",
-	});
-	return font;
-}
-
-export const font = getFont();
-
-function createParagraph(text: string): SkParagraph {
-	const paragraphStyle = {
-		textAlign: TextAlign.Center,
-	};
-
-	const fontStyle: SkTextStyle = {
-		fontFamilies: systemFontFamilies,
-		fontSize: 14,
-	};
-	const paragraph = Skia.ParagraphBuilder.Make(paragraphStyle).pushStyle(fontStyle).addText(text).pop().build();
-
-	return paragraph;
-}

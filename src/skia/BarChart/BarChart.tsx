@@ -5,12 +5,13 @@ import {
   Gesture,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
-import { Canvas, Rect, Text, vec, Line } from '@shopify/react-native-skia';
+import { Canvas, Rect, vec, Line } from '@shopify/react-native-skia';
 
-import { type CommonStyle, type VerticalLabelStyle } from '../common';
+import { type CommonStyle } from '../common';
 import useBarChart from './useBarChart';
 import Popup, { type PopupStyle } from '../Popup';
-import VerticalLabelView from "../Common/VerticalLabelView";
+import VerticalLabelView, { type VerticalLabelStyle } from "../Common/VerticalLabelView";
+import HorizontalLabelView from "../Common/HorizontalLabelView";
 
 export interface StackValue {
   value: number;
@@ -62,7 +63,7 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
     strokeWidth,
     tooltip,
     bottomLabelHeight,
-    font,
+    setBottomLabelHeight,
     onScroll,
     touchHandler,
     totalHeight,
@@ -100,7 +101,7 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
           });
         }}
       >
-        <View style={{ flexDirection: "row", height: chartHeight }}>
+        <View style={{ flexDirection: "row", height: chartHeight, backgroundColor: "red" }}>
           {
             yLabelView && (<VerticalLabelView
               onLayout={(event) => {
@@ -168,22 +169,17 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
         </View>
         {
           xLabelView &&
-          <View style={{ height: bottomLabelHeight }}>
-            {rectangles.map((bar, xIndex) => {
-              return <View
-                key={xIndex}
-                style={{
-                  position: "absolute",
-                  left: verticalLabelWidth + bar.x,
-                  top: 0,
-                  backgroundColor: "green",
-                  zIndex: 1000,
-                }}
-              >
-                {xLabelView(bar.label)}
-              </View>;
-            })}
-          </View>
+          <HorizontalLabelView
+            labels={rectangles.map(bar => bar.label)}
+            positions={rectangles.map(bar => bar.x)}
+            styles={{
+              left: verticalLabelWidth,
+              width: canvasWidth,
+            }}
+            onLayout={(event) => setBottomLabelHeight(event.nativeEvent.layout.height)}
+          >
+            {label => xLabelView(label)}
+          </HorizontalLabelView>
         }
         {tooltip && (
           <Popup
@@ -196,7 +192,6 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
             totalWidth={totalWidth}
             totalHeight={totalHeight}
             touchHandler={(x, y) => {
-              console.log("Popup ", tooltip, " y: ", y);
               touchHandler(x - verticalLabelWidth - paddingLeft, y);
             }}
             viewOffset={viewOffset}

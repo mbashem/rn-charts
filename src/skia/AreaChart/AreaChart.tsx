@@ -1,12 +1,13 @@
 // AreaChart.tsx
-import { Canvas, Circle, Group, Path, Text } from '@shopify/react-native-skia';
-import { type CommonStyle, type VerticalLabelStyle } from '../common';
+import { Canvas, Circle, Group, Path } from '@shopify/react-native-skia';
+import { type CommonStyle } from '../common';
 import { View } from 'react-native';
 import useAreaChart from './useAreaChart';
 import { useState } from 'react';
 import { lighten } from '../../util/colors';
 import Popup, { type PopupStyle } from '../Popup';
-import VerticalLabelView from "../Common/VerticalLabelView";
+import VerticalLabelView, { type VerticalLabelStyle } from "../Common/VerticalLabelView";
+import HorizontalLabelView from "../Common/HorizontalLabelView";
 
 export interface AreaData {
   values: number[];
@@ -30,28 +31,28 @@ export interface AreaChartProps {
   xLabels?: string[];
   yLabels: number[];
   yLabelView?: (percentage: number, min: number, max: number) => JSX.Element;
+  xLabelView?: (label?: string) => JSX.Element;
   style?: AreaChartStyle;
   popupStyle: PopupStyle<{ rowIndex: number; colIndex: number; value: number; }>;
 }
 
-function AreaChart({ yLabelView, ...props }: AreaChartProps) {
+function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
   const {
     minValue,
     maxValue,
     canvasHeight,
     areaCanvasHeight,
     verticalLabelWidth,
-    strokeWidth,
     verticalLabelStrokeWidth,
     yLabels,
     setVerticalLabelWidth,
+    setHorizontalLabelHeight,
     chartWidth,
     paths,
     xLabelsData,
     paddingLeft,
     paddingTop,
     paddingHorizontal,
-    font,
     touchLine,
     touchHandler,
   } = useAreaChart(props);
@@ -61,7 +62,7 @@ function AreaChart({ yLabelView, ...props }: AreaChartProps) {
 
   return (
     <View
-      style={[style, { flexDirection: 'row' }]}
+      style={[style, { flexDirection: "column" }]}
       ref={(view) => {
         view?.measureInWindow((fx, fy) => {
           setViewOffset((prev) => {
@@ -73,63 +74,67 @@ function AreaChart({ yLabelView, ...props }: AreaChartProps) {
         });
       }}
     >
-      {yLabelView &&
-        <VerticalLabelView
-          onLayout={(event) => {
-            setVerticalLabelWidth(event.nativeEvent.layout.width);
-          }}
-          labelPercentages={yLabels}
-          styles={{
-            width: props.style?.yLabelWidth,
-            height: areaCanvasHeight,
-            strokeWidth: verticalLabelStrokeWidth,
-            backgroundColor: props.style?.yLabelBackgroundColor
-          }}
-        >
-          {percentage => yLabelView(percentage, minValue, maxValue)}
-        </VerticalLabelView>
-      }
-
-      <Canvas
-        style={{
-          width: chartWidth,
-          height: canvasHeight,
-        }}
-        onTouchStart={(event) =>
-          touchHandler(event.nativeEvent.locationX, event.nativeEvent.locationY)
+      <View style={{ flexDirection: "row" }}>
+        {yLabelView &&
+          <VerticalLabelView
+            onLayout={(event) => {
+              setVerticalLabelWidth(event.nativeEvent.layout.width);
+            }}
+            labelPercentages={yLabels}
+            styles={{
+              width: props.style?.yLabelWidth,
+              height: areaCanvasHeight,
+              strokeWidth: verticalLabelStrokeWidth,
+              backgroundColor: props.style?.yLabelBackgroundColor
+            }}
+          >
+            {percentage => yLabelView(percentage, minValue, maxValue)}
+          </VerticalLabelView>
         }
-      >
-        {paths.map(({ path, points, color }, index) => {
-          return (
-            <Group key={index}>
-              <Path path={path} color={color} />
-              {style?.showPoints &&
-                color &&
-                points.map((points) => (
-                  <Circle
-                    key={`${points.x}-${points.y}`}
-                    cx={points.x}
-                    cy={points.y}
-                    r={style?.pointRadius ?? 3}
-                    color={lighten(color, style?.lightenPointsBy ?? 0.3)}
-                  />
-                ))}
-            </Group>
-          );
-        })}
-        {xLabelsData.map(({ label, xPosition }, index) => {
-          return (
-            <Text
-              key={index}
-              x={xPosition}
-              y={canvasHeight}
-              text={label}
-              font={font}
-              color={'white'}
-            />
-          );
-        })}
-      </Canvas>
+
+        <Canvas
+          style={{
+            width: chartWidth,
+            height: areaCanvasHeight,
+          }}
+          onTouchStart={(event) =>
+            touchHandler(event.nativeEvent.locationX, event.nativeEvent.locationY)
+          }
+        >
+          {paths.map(({ path, points, color }, index) => {
+            return (
+              <Group key={index}>
+                <Path path={path} color={color} />
+                {style?.showPoints &&
+                  color &&
+                  points.map((points) => (
+                    <Circle
+                      key={`${points.x}-${points.y}`}
+                      cx={points.x}
+                      cy={points.y}
+                      r={style?.pointRadius ?? 3}
+                      color={lighten(color, style?.lightenPointsBy ?? 0.3)}
+                    />
+                  ))}
+              </Group>
+            );
+          })}
+        </Canvas>
+      </View>
+      {
+        xLabelView &&
+        <HorizontalLabelView
+          labels={xLabelsData.map(labelData => labelData.label)}
+          positions={xLabelsData.map(labelData => labelData.xPosition)}
+          styles={{
+            left: verticalLabelWidth,
+            width: chartWidth,
+          }}
+          onLayout={(event) => setHorizontalLabelHeight(event.nativeEvent.layout.height)}
+        >
+          {label => xLabelView(label)}
+        </HorizontalLabelView>
+      }
       {touchLine && (
         <Popup
           popupData={touchLine.y.map((y, index) => ({

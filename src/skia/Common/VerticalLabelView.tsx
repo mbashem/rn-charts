@@ -4,7 +4,13 @@ import { getPaddings, type CommonStyle } from '../common';
 import useComponentLayout from "./useComponentLayout";
 import React, { useMemo, useState } from "react";
 
-interface VerticalLabelStyles extends CommonStyle {
+export interface VerticalLabelStyle {
+	yLabelWidth?: number;
+	yLabelBackgroundColor?: string;
+	yLabelStrokeWidth?: number;
+}
+
+interface VerticalLabelViewStyles extends CommonStyle {
 	width?: number;
 	height: number;
 	strokeWidth?: number;
@@ -13,7 +19,7 @@ interface VerticalLabelStyles extends CommonStyle {
 
 interface VerticalLabelProps {
 	labelPercentages: number[];
-	styles: VerticalLabelStyles;
+	styles: VerticalLabelViewStyles;
 	onLayout?: (event: LayoutChangeEvent) => void;
 	children: (percentage: number) => JSX.Element;
 }

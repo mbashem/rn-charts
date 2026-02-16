@@ -1,6 +1,6 @@
 import { Skia, type SkPath } from "@shopify/react-native-skia";
 import { useMemo, useState } from "react";
-import { getCommonStyleFont, getPaddings } from "../common";
+import { getPaddings } from "../common";
 import type { AreaChartProps, AreaChartStyle } from "./AreaChart";
 import { isDefined } from "../../util/util";
 
@@ -53,10 +53,8 @@ function useAreaChart({
 	const strokeWidth = style?.strokeWidth ?? 2
 	const verticalLabelStrokeWidth = style?.yLabelStrokeWidth ?? strokeWidth
 	const chartWidth = width - verticalLabelWidth - paddingHorizontal;
-	const xLabelHeight = xLabels && xLabels.length > 0 ? (style?.fontSize ?? 12) + 5 : 0;
-	const areaCanvasHeight = canvasHeight - xLabelHeight;
-
-	const { font } = getCommonStyleFont(style);
+	const [horizontalLabelHeight, setHorizontalLabelHeight] = useState(20)
+	const areaCanvasHeight = canvasHeight - horizontalLabelHeight;
 
 	const { maxValueCalculated, minValueCalculated } = useMemo(() => {
 		if (isDefined(maxValue) && isDefined(minValue)) {
@@ -94,7 +92,7 @@ function useAreaChart({
 				const xPos = i * stepX;
 				const yPos = Math.max(0, areaCanvasHeight - ((y - minValueCalculated) / (maxValueCalculated - minValueCalculated)) * areaCanvasHeight);
 
-				points.push({ x: xPos, y: yPos });
+				points.push({x: xPos, y: yPos });
 				values.push(y);
 				p.lineTo(xPos, yPos);
 			});
@@ -123,7 +121,7 @@ function useAreaChart({
 		const labels = xLabels.map((label, i) => {
 			return {
 				label,
-				xPosition: i * stepX + font.getSize(),
+				xPosition: i * stepX,
 			};
 		});
 		return labels;
@@ -171,8 +169,8 @@ function useAreaChart({
 		maxValue: maxValueCalculated,
 		minValue: minValueCalculated,
 		xLabelsData,
-		xLabelHeight,
-		font,
+		horizontalLabelHeight,
+		setHorizontalLabelHeight,
 		touchHandler,
 		touchLine
 	};

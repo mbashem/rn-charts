@@ -3,7 +3,7 @@ import { rect } from "@shopify/react-native-skia";
 import { arrayFrom, isDefined } from "../../util/util";
 import type { BarData, BarChartStyle, StackValue, BarChartProps } from "./BarChart";
 import { useWindowDimensions } from "react-native";
-import { getCommonStyleFont, getPaddings } from "../common";
+import { getPaddings } from "../common";
 
 export default function useBarChart(
 	{
@@ -64,7 +64,7 @@ export default function useBarChart(
 	const [verticalLabelWidth, setVerticalLabelWidth] = useState(style?.yLabelWidth ?? 0);
 	const chartHeight = style?.height ?? 200;
 	const strokeWidth = style?.strokeWidth ?? 2;
-	const bottomLabelHeight = 20;
+	const [bottomLabelHeight, setBottomLabelHeight] = useState(20);
 	const { width: windowWidth } = useWindowDimensions();
 	const totalWidth = style?.width ?? windowWidth;
 	const totalHeight = chartHeight;
@@ -74,7 +74,6 @@ export default function useBarChart(
 
 	const scrollAreaWidth = initialSpacing + data.length * chartBarWidth + (Math.max(0, data.length - 1) * chartBarSpacing) + endSpacing;
 	const canvasWidth = Math.min(scrollAreaWidth, totalWidth - verticalLabelWidth - paddingRight - paddingLeft);
-	const { font } = getCommonStyleFont(style);
 
 	const rectangles = useMemo(() => {
 		let leftBoundary = Math.max(0, startX);
@@ -201,7 +200,7 @@ export default function useBarChart(
 		rectangles,
 		tooltip,
 		bottomLabelHeight,
-		font,
+		setBottomLabelHeight,
 		setTooltip,
 		touchHandler,
 		onScroll,
