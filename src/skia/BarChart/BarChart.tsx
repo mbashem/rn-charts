@@ -1,9 +1,10 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { View } from 'react-native';
 import {
   GestureDetector,
   Gesture,
   GestureHandlerRootView,
+  ScrollView,
 } from 'react-native-gesture-handler';
 import { Canvas, Rect, vec, Line } from '@shopify/react-native-skia';
 
@@ -69,19 +70,21 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
     totalWidth,
   } = useBarChart(props);
 
-  const dragGesture = Gesture.Pan()
+  const panGestureRef = useRef(Gesture.Pan());
+  const panGesture = Gesture.Pan()
     .runOnJS(true)
     .onChange((event) => {
       onScroll(-event.changeX);
-    });
+    })
+    .withRef(panGestureRef);
   const tapGesture = Gesture.Tap()
     .runOnJS(true)
     .onStart((event) => {
-      touchHandler(event.x, event.y)
+      touchHandler(event.x, event.y);
     });
 
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
-  const canvasGestures = Gesture.Exclusive(dragGesture, tapGesture)
+  const canvasGestures = Gesture.Exclusive(panGesture, tapGesture);
 
   return (
     <GestureHandlerRootView>
@@ -123,48 +126,52 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
               {percentage => yLabelView(percentage, minValueCalculated, maxValueCalculated)}
             </VerticalLabelView>)
           }
-          <GestureDetector gesture={canvasGestures}>
-            <Canvas
-              style={{
-                width: canvasWidth,
-                height: chartHeight,
-              }}
-            >
-              {/* X axis */}
-              <Line
-                p1={vec(0, chartHeight)}
-                p2={vec(canvasWidth, chartHeight)}
-                color="white"
-                strokeWidth={strokeWidth}
-              />
+          <ScrollView horizontal={true} simultaneousHandlers={panGestureRef}>
+            <GestureDetector gesture={canvasGestures}>
 
-              {/* Bars */}
+              <Canvas
+                style={{
+                  width: canvasWidth,
+                  height: chartHeight,
+                }}
+              >
+                {/* X axis */}
+                <Line
+                  p1={vec(0, chartHeight)}
+                  p2={vec(canvasWidth, chartHeight)}
+                  color="white"
+                  strokeWidth={strokeWidth}
+                />
 
-              {rectangles.map((bar, xIndex) => {
-                if (bar.bars.length === 0) return null;
-                return (
-                  <Fragment key={xIndex}>
-                    {bar.bars.map((item, yIndex) => {
-                      let currentData = props.data[xIndex]!.values[yIndex]!;
-                      let color =
-                        props?.colors?.[currentData.id ?? currentData.label] ||
-                        '#4A90E2';
-                      return (
-                        <Rect
-                          key={xIndex + '-' + yIndex}
-                          x={item.x}
-                          y={item.y}
-                          width={item.width}
-                          height={item.height}
-                          color={color}
-                        />
-                      );
-                    })}
-                  </Fragment>
-                );
-              })}
-            </Canvas>
-          </GestureDetector>
+                {/* Bars */}
+
+                {rectangles.map((bar, xIndex) => {
+                  if (bar.bars.length === 0) return null;
+                  return (
+                    <Fragment key={xIndex}>
+                      {bar.bars.map((item, yIndex) => {
+                        let currentData = props.data[xIndex]!.values[yIndex]!;
+                        let color =
+                          props?.colors?.[currentData.id ?? currentData.label] ||
+                          '#4A90E2';
+                        return (
+                          <Rect
+                            key={xIndex + '-' + yIndex}
+                            x={item.x}
+                            y={item.y}
+                            width={item.width}
+                            height={item.height}
+                            color={color}
+                          />
+                        );
+                      })}
+                    </Fragment>
+                  );
+                })}
+              </Canvas>
+
+            </GestureDetector>
+          </ScrollView>
         </View>
         {
           xLabelView &&
