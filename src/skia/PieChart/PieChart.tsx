@@ -1,6 +1,6 @@
 import { Canvas, Path } from '@shopify/react-native-skia';
 import { type CommonStyle } from '../common';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { usePieChart } from './usePieChart';
 import Popup, { type PopupStyle } from '../Popup';
 import { useState } from 'react';

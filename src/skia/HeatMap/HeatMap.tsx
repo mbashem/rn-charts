@@ -1,5 +1,5 @@
 import React, { type Ref } from 'react';
-import { View, Modal } from 'react-native';
+import { View } from 'react-native';
 import { Canvas, Group, Rect } from '@shopify/react-native-skia';
 import useHeatMap from './useHeatMap';
 import type { CommonStyle } from '../common';

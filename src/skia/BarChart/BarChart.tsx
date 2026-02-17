@@ -62,7 +62,6 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
     chartHeight,
     strokeWidth,
     tooltip,
-    bottomLabelHeight,
     setBottomLabelHeight,
     onScroll,
     touchHandler,
@@ -75,8 +74,14 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
     .onChange((event) => {
       onScroll(-event.changeX);
     });
+  const tapGesture = Gesture.Tap()
+    .runOnJS(true)
+    .onStart((event) => {
+      touchHandler(event.x, event.y)
+    });
 
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
+  const canvasGestures = Gesture.Exclusive(dragGesture, tapGesture)
 
   return (
     <GestureHandlerRootView>
@@ -101,7 +106,7 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
           });
         }}
       >
-        <View style={{ flexDirection: "row", height: chartHeight, backgroundColor: "red" }}>
+        <View style={{ flexDirection: "row", height: chartHeight }}>
           {
             yLabelView && (<VerticalLabelView
               onLayout={(event) => {
@@ -118,18 +123,12 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
               {percentage => yLabelView(percentage, minValueCalculated, maxValueCalculated)}
             </VerticalLabelView>)
           }
-          <GestureDetector gesture={dragGesture}>
+          <GestureDetector gesture={canvasGestures}>
             <Canvas
               style={{
                 width: canvasWidth,
                 height: chartHeight,
               }}
-              onTouchStart={(event) =>
-                touchHandler(
-                  event.nativeEvent.locationX,
-                  event.nativeEvent.locationY
-                )
-              }
             >
               {/* X axis */}
               <Line

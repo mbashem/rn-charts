@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { rect } from "@shopify/react-native-skia";
 import { arrayFrom, isDefined } from "../../util/util";
-import type { BarData, BarChartStyle, StackValue, BarChartProps } from "./BarChart";
+import type { StackValue, BarChartProps } from "./BarChart";
 import { useWindowDimensions } from "react-native";
 import { getPaddings } from "../common";
 

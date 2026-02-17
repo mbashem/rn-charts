@@ -1,7 +1,7 @@
 import { Skia, type SkPath } from "@shopify/react-native-skia";
 import { useMemo, useState } from "react";
 import { getPaddings } from "../common";
-import type { AreaChartProps, AreaChartStyle } from "./AreaChart";
+import type { AreaChartProps } from "./AreaChart";
 import { isDefined } from "../../util/util";
 
 interface Point {
