@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from 'react';
+import React, { Fragment, useRef, useState } from 'react';
 import { View } from 'react-native';
 import {
   GestureDetector,
@@ -6,7 +6,7 @@ import {
   GestureHandlerRootView,
   ScrollView,
 } from 'react-native-gesture-handler';
-import { Canvas, Rect, vec, Line } from '@shopify/react-native-skia';
+import { Canvas, Rect, vec, Line, type SkHostRect, LinearGradient } from '@shopify/react-native-skia';
 
 import { type CommonStyle } from '../common';
 import useBarChart from './useBarChart';
@@ -18,6 +18,9 @@ export interface StackValue {
   value: number;
   label: string;
   id?: string;
+  onSelect?: () => React.JSX.Element;
+  skiaView?: (rect: SkHostRect) => React.JSX.Element;
+  onSelectSkiaView?: (rect: SkHostRect) => React.JSX.Element;
 }
 
 export interface BarData {
@@ -37,7 +40,7 @@ export interface BarChartStyle extends CommonStyle, VerticalLabelStyle {
 
 export interface BarChartProps {
   data: BarData[];
-  colors?: Record<string, string>;
+  colors?: Record<string, string | string[]>;
   yLabels: number[];
   yLabelView?: (percentage: number, min: number, max: number) => JSX.Element;
   xLabelView?: (label?: string) => JSX.Element;
@@ -109,7 +112,7 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
           });
         }}
       >
-        <View style={{ flexDirection: "row", height: chartHeight }}>
+        <View style={{ flexDirection: "row", height: chartHeight, padding: 0 }}>
           {
             yLabelView && (<VerticalLabelView
               onLayout={(event) => {
@@ -126,7 +129,7 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
               {percentage => yLabelView(percentage, minValueCalculated, maxValueCalculated)}
             </VerticalLabelView>)
           }
-          <ScrollView horizontal={true} simultaneousHandlers={panGestureRef}>
+          <ScrollView horizontal={true} simultaneousHandlers={panGestureRef} style={{ padding: 0 }}>
             <GestureDetector gesture={canvasGestures}>
 
               <Canvas
@@ -149,27 +152,35 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
                   if (bar.bars.length === 0) return null;
                   return (
                     <Fragment key={xIndex}>
-                      {bar.bars.map((item, yIndex) => {
+                      {bar.bars.map(({ rect, skiaView }, yIndex) => {
+                        if (skiaView !== undefined) { return skiaView(rect); }
                         let currentData = props.data[xIndex]!.values[yIndex]!;
                         let color =
-                          props?.colors?.[currentData.id ?? currentData.label] ||
-                          '#4A90E2';
+                          props?.colors?.[currentData.id ?? currentData.label];
                         return (
                           <Rect
                             key={xIndex + '-' + yIndex}
-                            x={item.x}
-                            y={item.y}
-                            width={item.width}
-                            height={item.height}
-                            color={color}
-                          />
+                            x={rect.x}
+                            y={rect.y}
+                            width={rect.width}
+                            height={rect.height}
+                            color={Array.isArray(color) ? undefined : color}
+                          >
+                            {Array.isArray(color) && (
+                              <LinearGradient
+                                start={vec(rect.x, rect.y)}
+                                end={vec(rect.x + rect.width, rect.y + rect.height)}
+                                colors={color}
+                              />
+                            )}
+                          </Rect>
                         );
                       })}
                     </Fragment>
                   );
                 })}
+                {tooltip && tooltip.data.onSelectSkiaView && tooltip.data.onSelectSkiaView(tooltip.rect)}
               </Canvas>
-
             </GestureDetector>
           </ScrollView>
         </View>
@@ -188,23 +199,38 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
           </HorizontalLabelView>
         }
         {tooltip && (
-          <Popup
-            popupData={{
-              x: tooltip.centerX,
-              y: tooltip.centerY,
-              data: tooltip.data,
-            }}
-            popupStyle={props.popupStyle}
-            totalWidth={totalWidth}
-            totalHeight={totalHeight}
-            touchHandler={(x, y) => {
-              touchHandler(x - verticalLabelWidth - paddingLeft, y);
-            }}
-            viewOffset={viewOffset}
-          />
+          <>
+            {tooltip.data.onSelect &&
+              <View
+                style={{
+                  position: "absolute",
+                  top: tooltip.rect.y + paddingTop,
+                  left: verticalLabelWidth + paddingLeft + tooltip.rect.x,
+                  width: tooltip.rect.width,
+                  height: tooltip.rect.height,
+                }}
+              >
+                {tooltip.data.onSelect()}
+              </View>
+            }
+            <Popup
+              popupData={{
+                x: tooltip.centerX,
+                y: tooltip.centerY,
+                data: tooltip.data,
+              }}
+              popupStyle={props.popupStyle}
+              totalWidth={totalWidth}
+              totalHeight={totalHeight}
+              touchHandler={(x, y) => {
+                touchHandler(x - verticalLabelWidth - paddingLeft, y);
+              }}
+              viewOffset={viewOffset}
+            />
+          </>
         )}
       </View>
-    </GestureHandlerRootView>
+    </GestureHandlerRootView >
   );
 }
 

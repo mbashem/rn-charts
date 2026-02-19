@@ -2,9 +2,9 @@ import React from 'react';
 import { Modal, View } from 'react-native';
 
 export interface PopupStyle<T> {
-	width?: number;
-	height?: number;
-	renderPopup?: (data: T) => React.ReactNode;
+  width?: number;
+  height?: number;
+  renderPopup?: (data: T) => React.ReactNode;
 }
 
 interface PopupData<T> {
@@ -19,7 +19,7 @@ interface PopupProps<T> {
   totalHeight: number;
   touchHandler?: (x: number, y: number) => void;
   onTouchOutside?: () => void;
-	popupStyle?: PopupStyle<T>;
+  popupStyle?: PopupStyle<T>;
   viewOffset: {
     x: number;
     y: number;
@@ -63,13 +63,13 @@ export default function Popup<T>({
           >
             {popupData && !Array.isArray(popupData) && (
               <View
-                style={[
+                style={
                   {
                     position: 'absolute',
                     left: Math.max(
                       0,
                       Math.min(popupData.x, totalWidth - (popupStyle?.width ?? 0)) +
-                        viewOffset.x
+                      viewOffset.x
                     ),
                     top: Math.max(
                       0,
@@ -78,8 +78,10 @@ export default function Popup<T>({
                         totalHeight - (popupStyle?.height ?? 0)
                       ) + viewOffset.y
                     ),
-                  },
-                ]}
+                    width: popupStyle.width,
+                    height: popupStyle.height
+                  }
+                }
                 onTouchStart={(e) => e.stopPropagation()}
               >
                 {popupStyle?.renderPopup(popupData.data)}
@@ -88,34 +90,34 @@ export default function Popup<T>({
 
             {popupData &&
               Array.isArray(popupData) &&
-              popupData.map((popupItem, index) => 
-               (
-                  <View
-                    key={index}
-                    style={[
-                      {
-                        position: 'absolute',
-                        left: Math.max(
-                          0,
-                          Math.min(
-                            popupItem.x,
-                            totalWidth - (popupStyle?.width ?? 0)
-                          ) + viewOffset.x
-                        ),
-                        top: Math.max(
-                          0,
-                          Math.min(
-                            popupItem.y,
-                            totalHeight - (popupStyle?.height ?? 0)
-                          ) + viewOffset.y
-                        ),
-                      },
-                    ]}
-                    onTouchStart={(e) => e.stopPropagation()}
-                  >
-                    {popupStyle?.renderPopup?.(popupItem.data)}
-                  </View>
-                )
+              popupData.map((popupItem, index) =>
+              (
+                <View
+                  key={index}
+                  style={
+                    {
+                      position: 'absolute',
+                      left: Math.max(
+                        0,
+                        Math.min(
+                          popupItem.x,
+                          totalWidth - (popupStyle?.width ?? 0)
+                        ) + viewOffset.x
+                      ),
+                      top: Math.max(
+                        0,
+                        Math.min(
+                          popupItem.y,
+                          totalHeight - (popupStyle?.height ?? 0)
+                        ) + viewOffset.y
+                      ),
+                    }
+                  }
+                  onTouchStart={(e) => e.stopPropagation()}
+                >
+                  {popupStyle?.renderPopup?.(popupItem.data)}
+                </View>
+              )
               )}
           </View>
         </Modal>

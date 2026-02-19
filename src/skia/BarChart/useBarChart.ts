@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { rect } from "@shopify/react-native-skia";
+import { rect, type SkHostRect } from "@shopify/react-native-skia";
 import { arrayFrom, isDefined } from "../../util/util";
 import type { StackValue, BarChartProps } from "./BarChart";
 import { useWindowDimensions } from "react-native";
@@ -48,7 +48,7 @@ export default function useBarChart(
 	}, [data, maxValue]);
 
 	const steps = useMemo(() => arrayFrom(1, 0.2), []);
-	const [tooltip, setTooltip] = useState<{ centerX: number, centerY: number, data: StackValue; } | undefined>(undefined);
+	const [tooltip, setTooltip] = useState<{ centerX: number, centerY: number, rect: SkHostRect, data: StackValue; } | undefined>(undefined);
 	const [startX, setStartX] = useState<number>(0);
 
 	const {
@@ -68,7 +68,7 @@ export default function useBarChart(
 	const { width: windowWidth } = useWindowDimensions();
 	const totalWidth = style?.width ?? windowWidth;
 	const totalHeight = chartHeight;
-	
+
 	const initialSpacing = style?.firstBarLeadingSpacing ?? 0;
 	const endSpacing = style?.lastBarTrailingSpacing ?? chartBarSpacing;
 
@@ -97,7 +97,7 @@ export default function useBarChart(
 							chartHeight - barHeight - previousHeight - strokeWidth;
 
 						previousHeight += barHeight;
-						return rect(x, y, chartBarWidth, barHeight);
+						return { rect: rect(x, y, chartBarWidth, barHeight), skiaView: item.skiaView };
 					}),
 					label: bar.label,
 					dataIndex: xIndex + startArrayIndex,
@@ -123,7 +123,7 @@ export default function useBarChart(
 		let xIndex = -1;
 		let startingXIndex = 0;
 
-		if (touchedX >= rectangles[0]!.x && touchedX <= rectangles[0]!.x + rectangles[0]!.bars[0]!.width) {
+		if (touchedX >= rectangles[0]!.x && touchedX <= rectangles[0]!.x + rectangles[0]!.bars[0]!.rect.width) {
 			xIndex = 0;
 			startingXIndex = Math.max(0, rectangles[0]!.x);
 		} else if (touchedX >= rectangles[0]!.x) {
@@ -163,9 +163,10 @@ export default function useBarChart(
 		}
 
 		setTooltip({
-			centerX: startingXIndex + chartBarWidth / 2 + verticalLabelWidth,
+			centerX: startingXIndex + verticalLabelWidth + paddingLeft + chartBarWidth / 2,
 			centerY:
-				chartHeight - yPassed - strokeWidth + lastBarHeight / 2,
+				chartHeight - yPassed - strokeWidth + paddingTop + lastBarHeight / 2,
+			rect: rect(startingXIndex, chartHeight - yPassed - strokeWidth, chartBarWidth, lastBarHeight),
 			data: categoryData[yIndex - 1]!,
 		});
 	};
