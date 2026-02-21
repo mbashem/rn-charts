@@ -48,7 +48,7 @@ export default function useBarChart(
 	}, [data, maxValue]);
 
 	const steps = useMemo(() => arrayFrom(1, 0.2), []);
-	const [tooltip, setTooltip] = useState<{ centerX: number, centerY: number, rect: SkHostRect, data: StackValue; } | undefined>(undefined);
+	const [tooltip, setTooltip] = useState<{ centerX: number, centerY: number, rect: SkHostRect, data: StackValue, xLabel?: string; } | undefined>(undefined);
 	const [startX, setStartX] = useState<number>(0);
 
 	const {
@@ -90,14 +90,14 @@ export default function useBarChart(
 					bars: bar.values.map((item, yIndex) => {
 						const barHeight =
 							((item.value - minValueCalculated) /
-								(maxValueCalculated - minValueCalculated)) *
+								Math.max(maxValueCalculated - minValueCalculated, 1)) *
 							chartHeight;
 
 						const y =
 							chartHeight - barHeight - previousHeight - strokeWidth;
 
 						previousHeight += barHeight;
-						return { rect: rect(x, y, chartBarWidth, barHeight), skiaView: item.skiaView };
+						return { rect: rect(x, y, chartBarWidth, barHeight), stackValue: item };
 					}),
 					label: bar.label,
 					dataIndex: xIndex + startArrayIndex,
@@ -149,7 +149,7 @@ export default function useBarChart(
 		) {
 			const barHeight =
 				((categoryData[yIndex]!.value - minValueCalculated) /
-					(maxValueCalculated - minValueCalculated)) *
+					Math.max(maxValueCalculated - minValueCalculated, 1)) *
 				chartHeight;
 			yPassed += barHeight;
 			lastBarHeight = barHeight;
@@ -168,6 +168,7 @@ export default function useBarChart(
 				chartHeight - yPassed - strokeWidth + paddingTop + lastBarHeight / 2,
 			rect: rect(startingXIndex, chartHeight - yPassed - strokeWidth, chartBarWidth, lastBarHeight),
 			data: categoryData[yIndex - 1]!,
+			xLabel: data[xIndex]?.label
 		});
 	};
 

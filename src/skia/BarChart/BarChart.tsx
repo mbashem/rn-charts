@@ -1,4 +1,4 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { Fragment, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import {
   GestureDetector,
@@ -18,9 +18,6 @@ export interface StackValue {
   value: number;
   label: string;
   id?: string;
-  onSelect?: () => React.JSX.Element;
-  skiaView?: (rect: SkHostRect) => React.JSX.Element;
-  onSelectSkiaView?: (rect: SkHostRect) => React.JSX.Element;
 }
 
 export interface BarData {
@@ -44,13 +41,16 @@ export interface BarChartProps {
   yLabels: number[];
   yLabelView?: (percentage: number, min: number, max: number) => JSX.Element;
   xLabelView?: (label?: string) => JSX.Element;
+  onSelectBarView?: (stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
+  barSkiaView?: (rect: SkHostRect, stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
+  onSelectBarSkiaView?: (rect: SkHostRect, stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
   maxValue?: number;
   minValue?: number;
   popupStyle?: PopupStyle<StackValue>;
   style?: BarChartStyle;
 }
 
-function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
+function BarChart({ xLabelView, yLabelView, barSkiaView, onSelectBarSkiaView, onSelectBarView, ...props }: BarChartProps) {
   const {
     maxValueCalculated,
     minValueCalculated,
@@ -88,6 +88,14 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
 
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const canvasGestures = Gesture.Exclusive(panGesture, tapGesture);
+  const onSelectBarViewMemo = useMemo(() => {
+    if (tooltip === undefined) { return undefined; }
+    return onSelectBarView?.(tooltip.data, tooltip.xLabel);
+  }, [tooltip]);
+  const onSelectBarSkiaViewMemo = useMemo(() => {
+    if (tooltip === undefined) { return undefined; }
+    return onSelectBarSkiaView?.(tooltip.rect, tooltip.data, tooltip.xLabel);
+  }, [tooltip]);
 
   return (
     <GestureHandlerRootView>
@@ -152,8 +160,9 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
                   if (bar.bars.length === 0) return null;
                   return (
                     <Fragment key={xIndex}>
-                      {bar.bars.map(({ rect, skiaView }, yIndex) => {
-                        if (skiaView !== undefined) { return skiaView(rect); }
+                      {bar.bars.map(({ rect, stackValue }, yIndex) => {
+                        let skiaView = barSkiaView?.(rect, stackValue, bar.label);
+                        if (skiaView !== undefined) { return skiaView; }
                         let currentData = props.data[xIndex]!.values[yIndex]!;
                         let color =
                           props?.colors?.[currentData.id ?? currentData.label];
@@ -179,7 +188,7 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
                     </Fragment>
                   );
                 })}
-                {tooltip && tooltip.data.onSelectSkiaView && tooltip.data.onSelectSkiaView(tooltip.rect)}
+                {onSelectBarSkiaViewMemo}
               </Canvas>
             </GestureDetector>
           </ScrollView>
@@ -200,7 +209,7 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
         }
         {tooltip && (
           <>
-            {tooltip.data.onSelect &&
+            {onSelectBarViewMemo &&
               <View
                 style={{
                   position: "absolute",
@@ -210,7 +219,7 @@ function BarChart({ xLabelView, yLabelView, ...props }: BarChartProps) {
                   height: tooltip.rect.height,
                 }}
               >
-                {tooltip.data.onSelect()}
+                {onSelectBarViewMemo}
               </View>
             }
             <Popup

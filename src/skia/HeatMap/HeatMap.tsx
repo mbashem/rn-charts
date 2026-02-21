@@ -1,8 +1,8 @@
 import React, { type Ref } from 'react';
 import { View } from 'react-native';
-import { Canvas, Group, Rect } from '@shopify/react-native-skia';
+import { Canvas, Group, Rect, rect, type SkHostRect } from '@shopify/react-native-skia';
 import useHeatMap from './useHeatMap';
-import type { CommonStyle } from '../common';
+import type { CommonStyle, HandleOutSideTouch } from '../common';
 import Popup, { type PopupStyle } from '../Popup';
 
 export type DayData = {
@@ -13,10 +13,6 @@ export type DayData = {
   x: number;
   y: number;
 };
-
-export interface HandleOutSideTouch {
-  touchedOutside: () => void;
-}
 
 export interface HeatMapStyle extends CommonStyle {
   cellSize?: number;
@@ -32,11 +28,23 @@ export interface HeatMapProps {
   style?: HeatMapStyle;
   minValue?: number;
   maxValue?: number;
+  daySkiaView?: (
+    rect: SkHostRect,
+    day: DayData
+  ) => React.JSX.Element | undefined;
+  onSelectSkiaView?: (
+    rect: SkHostRect,
+    day: DayData
+  ) => React.JSX.Element | undefined;
+  onSelectView?: (
+    rect: SkHostRect,
+    day: DayData
+  ) => React.JSX.Element | undefined;
   ref?: Ref<HandleOutSideTouch | undefined>;
   popupStyle?: PopupStyle<DayData>;
 }
 
-function HeatMap(props: HeatMapProps) {
+function HeatMap({ daySkiaView, onSelectView, onSelectSkiaView, ...props }: HeatMapProps) {
   const {
     daysInRange,
     totalWidth,
@@ -51,6 +59,19 @@ function HeatMap(props: HeatMapProps) {
   } = useHeatMap(props);
 
   const [viewOffset, setViewOffset] = React.useState({ x: 0, y: 0 });
+  const onSelectSkiaViewMemo = React.useMemo(() => {
+    if (!popupData || !onSelectSkiaView) {
+      return undefined;
+    }
+    return onSelectSkiaView?.(rect(popupData.x, popupData.y, cellSize, cellSize), popupData.day);
+  }, [popupData, onSelectSkiaView, cellSize]);
+
+  const onSelectViewMemo = React.useMemo(() => {
+    if (!popupData || !onSelectView) {
+      return undefined;
+    }
+    return onSelectView(rect(popupData.x, popupData.y, cellSize, cellSize), popupData.day);
+  }, [popupData, onSelectView, cellSize]);
 
   return (
     <View
@@ -74,6 +95,9 @@ function HeatMap(props: HeatMapProps) {
       >
         <Group>
           {daysInRange.map((day) => {
+            let skiaView = daySkiaView?.(rect(day.x, day.y, cellSize, cellSize), day);
+            if (skiaView !== undefined) { return skiaView; }
+
             return (
               <Rect
                 key={day.date}
@@ -85,10 +109,22 @@ function HeatMap(props: HeatMapProps) {
               />
             );
           })}
+          {onSelectSkiaViewMemo}
         </Group>
       </Canvas>
 
-      {popupData && props.popupStyle && (
+      {popupData && props.popupStyle && (<>
+        {onSelectViewMemo &&
+          <View
+            style={{
+              position: "absolute",
+              top: popupData.y,
+              left: popupData.x
+            }}
+          >
+            {onSelectViewMemo}
+          </View>
+        }
         <Popup
           popupData={{ x: popupData.x, y: popupData.y, data: popupData.day }}
           totalWidth={totalWidth}
@@ -98,6 +134,7 @@ function HeatMap(props: HeatMapProps) {
           popupStyle={props.popupStyle}
           viewOffset={viewOffset}
         />
+      </>
       )}
     </View>
   );
