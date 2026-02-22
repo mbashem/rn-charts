@@ -40,6 +40,7 @@ export interface BarChartProps {
   colors?: Record<string, string | string[]>;
   yLabels: number[];
   yLabelView?: (percentage: number, min: number, max: number) => JSX.Element;
+  yLabelSkiaView?: (percentage: number, yPosition: number) => JSX.Element | undefined;
   xLabelView?: (label?: string) => JSX.Element;
   onSelectBarView?: (stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
   barSkiaView?: (rect: SkHostRect, stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
@@ -50,7 +51,7 @@ export interface BarChartProps {
   style?: BarChartStyle;
 }
 
-function BarChart({ xLabelView, yLabelView, barSkiaView, onSelectBarSkiaView, onSelectBarView, ...props }: BarChartProps) {
+function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelectBarSkiaView, onSelectBarView, ...props }: BarChartProps) {
   const {
     maxValueCalculated,
     minValueCalculated,
@@ -122,7 +123,7 @@ function BarChart({ xLabelView, yLabelView, barSkiaView, onSelectBarSkiaView, on
       >
         <View style={{ flexDirection: "row", height: chartHeight, padding: 0 }}>
           {
-            yLabelView && (<VerticalLabelView
+            (yLabelView || yLabelSkiaView) && (<VerticalLabelView
               onLayout={(event) => {
                 setVerticalLabelWidth(event.nativeEvent.layout.width);
               }}
@@ -133,8 +134,9 @@ function BarChart({ xLabelView, yLabelView, barSkiaView, onSelectBarSkiaView, on
                 strokeWidth,
                 backgroundColor: props.style?.yLabelBackgroundColor
               }}
+              labelSkiaView={(percentage, yPosition) => yLabelSkiaView?.(percentage, yPosition)}
             >
-              {percentage => yLabelView(percentage, minValueCalculated, maxValueCalculated)}
+              {percentage => yLabelView?.(percentage, minValueCalculated, maxValueCalculated)}
             </VerticalLabelView>)
           }
           <ScrollView horizontal={true} simultaneousHandlers={panGestureRef} style={{ padding: 0 }}>

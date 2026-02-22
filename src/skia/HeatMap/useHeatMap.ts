@@ -1,6 +1,7 @@
 import type { View } from "react-native-reanimated/lib/typescript/Animated";
 import type { DayData, HeatMapProps } from "./HeatMap";
 import { useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { getPaddings } from "../common";
 
 function useHeatMap({
   startDate,
@@ -18,7 +19,17 @@ function useHeatMap({
   const cellMaxColor = style?.cellMaxColor ?? '#50f555ff';
   const cellMinColor = style?.cellMinColor ?? '#ffffffff';
 
+  const [verticalLabelWidth, setVerticalLabelWidth] = useState<number>(0);
+  const [horizontalLabelHeight, setHorizontalLabelHeight] = useState<number>(0);
+  const {
+    paddingLeft,
+    paddingRight,
+    paddingTop,
+    paddingBottom
+  } = getPaddings(style);
+
   const numberOfDaysInWeek = 7;
+  const numberOfRows = numberOfDaysInWeek;
   const numberOfMsInDay = 1000 * 60 * 60 * 24;
 
   const [popupData, setPopupData] = useState<
@@ -102,7 +113,7 @@ function useHeatMap({
 
   // Heatmap size
   const numWeeks = Math.ceil(daysInRange.length / 7 + 1);
-  const totalWidth = numWeeks * (cellSize + cellGap);
+  const totalWidth = numWeeks * (cellSize + cellGap) + verticalLabelWidth;
   const totalHeight = 7 * (cellSize + cellGap);
 
   // --- POPUP MEASUREMENT ---
@@ -168,7 +179,16 @@ function useHeatMap({
     touchHandler,
     getColor,
     cellSize,
-    onTouchOutside
+    onTouchOutside,
+    verticalLabelWidth,
+    setVerticalLabelWidth,
+    horizontalLabelHeight,
+    setHorizontalLabelHeight,
+    numberOfRows,
+    paddingLeft,
+    paddingRight,
+    paddingTop,
+    paddingBottom
   };
 }
 
