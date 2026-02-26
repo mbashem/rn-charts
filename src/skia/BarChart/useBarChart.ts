@@ -61,9 +61,10 @@ export default function useBarChart(
 	const chartBarWidth = style?.barWidth ?? 100;
 	const chartBarSpacing = style?.barSpacing ?? 0;
 
-	const [verticalLabelWidth, setVerticalLabelWidth] = useState(style?.yLabelWidth ?? 0);
+	const [verticalLabelWidth, setVerticalLabelWidth] = useState(style?.verticalLabelStyle?.width ?? 0);
 	const chartHeight = style?.height ?? 200;
-	const strokeWidth = style?.strokeWidth ?? 2;
+	const verticalStrokeWidth = style?.verticalLabelStyle?.strokeWidth ?? 0;
+	const horizontalStrokeWidth = style?.horizontalLabelStyle?.strokeWidth ?? 0;
 	const [bottomLabelHeight, setBottomLabelHeight] = useState(20);
 	const { width: windowWidth } = useWindowDimensions();
 	const totalWidth = style?.width ?? windowWidth;
@@ -76,7 +77,7 @@ export default function useBarChart(
 	const canvasWidth = Math.min(scrollAreaWidth, totalWidth - verticalLabelWidth - paddingRight - paddingLeft);
 
 	const rectangles = useMemo(() => {
-		let leftBoundary = Math.max(0, startX);
+		let leftBoundary = Math.max(0, startX - totalWidth);
 		let rightBoundary = startX + totalWidth;
 
 		let startArrayIndex = Math.floor(Math.max(leftBoundary - initialSpacing, 0) / (chartBarWidth + chartBarSpacing));
@@ -94,7 +95,7 @@ export default function useBarChart(
 							chartHeight;
 
 						const y =
-							chartHeight - barHeight - previousHeight - strokeWidth;
+							chartHeight - barHeight - previousHeight;
 
 						previousHeight += barHeight;
 						return { rect: rect(x, y, chartBarWidth, barHeight), stackValue: item };
@@ -110,7 +111,6 @@ export default function useBarChart(
 		chartBarSpacing,
 		maxValueCalculated,
 		minValueCalculated,
-		strokeWidth,
 		startX
 	]);
 
@@ -165,8 +165,8 @@ export default function useBarChart(
 		setTooltip({
 			centerX: startingXIndex + verticalLabelWidth + paddingLeft + chartBarWidth / 2,
 			centerY:
-				chartHeight - yPassed - strokeWidth + paddingTop + lastBarHeight / 2,
-			rect: rect(startingXIndex, chartHeight - yPassed - strokeWidth, chartBarWidth, lastBarHeight),
+				chartHeight - yPassed + paddingTop + lastBarHeight / 2,
+			rect: rect(startingXIndex, chartHeight - yPassed, chartBarWidth, lastBarHeight),
 			data: categoryData[yIndex - 1]!,
 			xLabel: data[xIndex]?.label
 		});
@@ -198,7 +198,6 @@ export default function useBarChart(
 		setVerticalLabelWidth,
 		chartBarWidth,
 		chartBarSpacing,
-		strokeWidth,
 		rectangles,
 		tooltip,
 		bottomLabelHeight,
@@ -208,6 +207,8 @@ export default function useBarChart(
 		onScroll,
 		totalHeight,
 		totalWidth,
-		yLabels
+		yLabels,
+		verticalStrokeWidth,
+		horizontalStrokeWidth
 	};
 }

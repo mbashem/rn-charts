@@ -5,34 +5,44 @@ import useHeatMap from './useHeatMap';
 import type { CommonStyle, HandleOutSideTouch } from '../common';
 import Popup, { type PopupStyle } from '../Popup';
 import VerticalLabelView, { type VerticalLabelStyle } from "../Common/VerticalLabelView";
+import HorizontalLabelView, { type HorizontalLabelStyleExtended } from "../Common/HorizontalLabelView";
 
-export type DayData = {
-  date: string;
+export type CellDatum = {
+  rowIndex: number;
+  colIndex: number;
+  groupIndex: number;
   value: number;
-  dayOfWeek: number;
-  week: number;
   x: number;
   y: number;
 };
 
-export interface HeatMapStyle extends CommonStyle, VerticalLabelStyle {
+export interface HeatMapDataGroup {
+  cols: number;
+  startingRow: number;
+  endingRow: number;
+  data?: Record<number, Record<number, number>>;
+}
+
+export interface HeatMapStyle extends CommonStyle {
   cellSize?: number;
   cellGap?: number;
   cellMaxColor?: string;
   cellMinColor?: string;
-  horizontalLabelPosition?: "top" | "bottom";
+  horizontalLabelStyle?: HorizontalLabelStyleExtended;
+  verticalLabelStyle?: VerticalLabelStyle;
+  interGroupSpacing?: number;
 }
 
 export interface HeatMapProps {
-  startDate: string;
-  endDate: string;
-  data?: Record<string, number>;
+  rows: number;
+  data: HeatMapDataGroup[];
+  coalesceGroups?: boolean;
   style?: HeatMapStyle;
   minValue?: number;
   maxValue?: number;
   xLabelSkiaView?: (
-    label: string,
-    position: { x: number; y: number; }
+    index: number,
+    rect: SkHostRect,
   ) => React.JSX.Element | undefined;
   yLabelSkiaView?: (
     index: number,
@@ -40,32 +50,33 @@ export interface HeatMapProps {
   ) => React.JSX.Element | undefined;
 
   xLabelView?: (
-    label: string
+    index: number,
+    width: number
   ) => React.JSX.Element | undefined;
   yLabelView?: (
     index: number
   ) => React.JSX.Element | undefined;
 
-  daySkiaView?: (
+  cellSkiaView?: (
     rect: SkHostRect,
-    day: DayData
+    day: CellDatum
   ) => React.JSX.Element | undefined;
 
   onSelectSkiaView?: (
     rect: SkHostRect,
-    day: DayData
+    day: CellDatum
   ) => React.JSX.Element | undefined;
   onSelectView?: (
     rect: SkHostRect,
-    day: DayData
+    day: CellDatum
   ) => React.JSX.Element | undefined;
   ref?: Ref<HandleOutSideTouch | undefined>;
-  popupStyle?: PopupStyle<DayData>;
+  popupStyle?: PopupStyle<CellDatum>;
 }
 
-function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, daySkiaView, onSelectView, onSelectSkiaView, ...props }: HeatMapProps) {
+function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, cellSkiaView, onSelectView, onSelectSkiaView, ...props }: HeatMapProps) {
   const {
-    daysInRange,
+    cellData,
     totalWidth,
     totalHeight,
     popupData,
@@ -83,7 +94,8 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, daySk
     paddingTop,
     paddingBottom,
     paddingLeft,
-    paddingRight
+    paddingRight,
+    xLabelsRect
   } = useHeatMap(props);
 
   const [viewOffset, setViewOffset] = React.useState({ x: 0, y: 0 });
@@ -91,14 +103,14 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, daySk
     if (!popupData || !onSelectSkiaView) {
       return undefined;
     }
-    return onSelectSkiaView?.(rect(popupData.x, popupData.y, cellSize, cellSize), popupData.day);
+    return onSelectSkiaView?.(rect(popupData.x, popupData.y, cellSize, cellSize), popupData.data);
   }, [popupData, onSelectSkiaView, cellSize]);
 
   const onSelectViewMemo = React.useMemo(() => {
     if (!popupData || !onSelectView) {
       return undefined;
     }
-    return onSelectView(rect(popupData.x, popupData.y, cellSize, cellSize), popupData.day);
+    return onSelectView(rect(popupData.x, popupData.y, cellSize, cellSize), popupData.data);
   }, [popupData, onSelectView, cellSize]);
 
   return <View
@@ -122,11 +134,9 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, daySk
           }}
           labelPercentages={Array.from({ length: numberOfRows }, (_, i) => (i + 1) / numberOfRows)}
           styles={{
-            width: props.style?.yLabelWidth,
             height: totalHeight,
-            strokeWidth: props.style?.yLabelStrokeWidth,
-            strokeColor: props.style?.yLabelStrokeColor,
-            backgroundColor: props.style?.yLabelBackgroundColor
+            top: horizontalLabelHeight,
+            verticalLabelStyle: props.style?.verticalLabelStyle,
           }}
           labelSkiaView={(_percentage, yPosition, index) => yLabelSkiaView?.(index, yPosition)}
         >
@@ -134,6 +144,21 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, daySk
         </VerticalLabelView>)
       }
       <View style={{ width: totalWidth, height: totalHeight }}>
+        {
+          (xLabelView || xLabelSkiaView) &&
+          <HorizontalLabelView
+            labels={xLabelsRect.map((rect) => rect)}
+            positions={xLabelsRect.map(rect => rect.x)}
+            style={{
+              width: totalWidth,
+              horizontalLabelStyle: props.style?.horizontalLabelStyle,
+            }}
+            onLayout={(event) => setHorizontalLabelHeight(event.nativeEvent.layout.height)}
+            labelSkiaView={(yPostion, index, data) => xLabelSkiaView?.(index, data)}
+          >
+            {(index, rect) => xLabelView?.(index, rect.width)}
+          </HorizontalLabelView>
+        }
         <Canvas
           style={{ width: totalWidth, height: totalHeight }}
           onTouchStart={(event) =>
@@ -141,18 +166,17 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, daySk
           }
         >
           <Group>
-            {daysInRange.map((day) => {
-              let skiaView = daySkiaView?.(rect(day.x, day.y, cellSize, cellSize), day);
+            {cellData.map((datum) => {
+              let skiaView = cellSkiaView?.(rect(datum.x, datum.y, cellSize, cellSize), datum);
               if (skiaView !== undefined) { return skiaView; }
-
               return (
                 <Rect
-                  key={day.date}
-                  x={day.x}
-                  y={day.y}
+                  key={datum.x + '-' + datum.y}
+                  x={datum.x}
+                  y={datum.y}
                   width={cellSize}
                   height={cellSize}
-                  color={getColor(day.value)}
+                  color={getColor(datum.value)}
                 />
               );
             })}
@@ -168,7 +192,7 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, daySk
           <View
             style={{
               position: "absolute",
-              top: popupData.y + (props.style?.horizontalLabelPosition === "bottom" ? 0 : horizontalLabelHeight),
+              top: popupData.y + (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight),
               left: popupData.x + verticalLabelWidth
             }}
           >
@@ -176,11 +200,11 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, daySk
           </View>
         }
         <Popup
-          popupData={{ x: popupData.x, y: popupData.y, data: popupData.day }}
+          popupData={{ x: popupData.x + verticalLabelWidth, y: popupData.y + (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight), data: popupData.data }}
           totalWidth={totalWidth}
           totalHeight={totalHeight}
           touchHandler={(x, y) => {
-            touchHandler(x - verticalLabelWidth - paddingLeft, y - (props.style?.horizontalLabelPosition === "bottom" ? 0 : horizontalLabelHeight));
+            touchHandler(x - verticalLabelWidth - paddingLeft, y - (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight));
           }}
           onTouchOutside={onTouchOutside}
           popupStyle={props.popupStyle}

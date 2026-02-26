@@ -49,9 +49,9 @@ function useAreaChart({
 	} = getPaddings(style);
 
 	const canvasHeight = height - paddingVertical;
-	const [verticalLabelWidth, setVerticalLabelWidth] = useState(style?.yLabelWidth ?? 0);
+	const [verticalLabelWidth, setVerticalLabelWidth] = useState(style?.verticalLabelStyle?.width ?? 0);
 	const strokeWidth = style?.strokeWidth ?? 2
-	const verticalLabelStrokeWidth = style?.yLabelStrokeWidth ?? strokeWidth
+	const verticalLabelStrokeWidth = style?.verticalLabelStyle?.strokeWidth ?? strokeWidth
 	const chartWidth = width - verticalLabelWidth - paddingHorizontal;
 	const [horizontalLabelHeight, setHorizontalLabelHeight] = useState(20)
 	const areaCanvasHeight = canvasHeight - horizontalLabelHeight;

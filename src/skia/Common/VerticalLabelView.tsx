@@ -1,21 +1,19 @@
 import { View, type LayoutChangeEvent } from "react-native";
 import { Canvas, Group, Line } from '@shopify/react-native-skia';
 import { getPaddings, type CommonStyle } from '../common';
-import useComponentLayout from "./useComponentLayout";
 import React, { useMemo, useState } from "react";
 
 export interface VerticalLabelStyle {
-	yLabelWidth?: number;
-	yLabelBackgroundColor?: string;
-	yLabelStrokeWidth?: number;
-	yLabelStrokeColor?: string;
+	width?: number;
+	backgroundColor?: string;
+	strokeWidth?: number;
+	strokeColor?: string;
 }
 
 interface VerticalLabelViewStyles extends CommonStyle {
-	width?: number;
 	height: number;
-	strokeWidth?: number;
-	strokeColor?: string;
+	top?: number;
+	verticalLabelStyle?: VerticalLabelStyle;
 }
 
 interface VerticalLabelProps {
@@ -38,14 +36,18 @@ function VerticalLabelView({
 	children
 }: VerticalLabelProps) {
 	const {
-		width,
+		top,
 		height,
+		backgroundColor,
+		verticalLabelStyle = {}
+	} = styles;
+	const {
+		width,
 		strokeWidth = 0,
 		strokeColor = 'white',
-		backgroundColor,
-	} = styles;
+	} = verticalLabelStyle;
+
 	const { paddingTop = 0, paddingBottom = 0 } = getPaddings(styles);
-	const [viewLayout, onViewLayout] = useComponentLayout();
 	const [maxWidth, setMaxWidth] = useState(width);
 	useMemo(() => {
 		setMaxWidth(width);
@@ -55,6 +57,7 @@ function VerticalLabelView({
 		<View
 			style={{
 				width: (maxWidth ?? 0),
+				top,
 				height,
 				backgroundColor,
 				flexDirection: "row-reverse",
@@ -62,7 +65,6 @@ function VerticalLabelView({
 			}}
 			onLayout={(event) => {
 				onLayout?.(event);
-				onViewLayout(event);
 			}}
 		>
 			<View style={{ position: "relative", width: (maxWidth ?? 0) - strokeWidth, paddingVertical: 0, height: height }}>
@@ -72,8 +74,8 @@ function VerticalLabelView({
 						style={{ position: "absolute", top: (1 - percentage) * height, backgroundColor: "purple" }}
 						onLayout={(event) => {
 							let width = event.nativeEvent.layout.width + strokeWidth;
-							if (styles.width !== undefined)
-								setMaxWidth(styles.width);
+							if (verticalLabelStyle.width !== undefined)
+								setMaxWidth(verticalLabelStyle.width);
 							else {
 								if (index === 0) {
 									setMaxWidth(width + strokeWidth);
@@ -88,20 +90,22 @@ function VerticalLabelView({
 				})}
 			</View>
 
-			<Canvas style={{ position: "absolute", left: 0, width, height, }}>
-				{labelSkiaView && labelPercentages.map((percentage, index) => {
-					return <Group key={percentage}>{labelSkiaView(percentage, (1 - percentage) * height, index)}</Group>;
-				})}
+			{(labelSkiaView || strokeWidth > 0) &&
+				<Canvas style={{ position: "absolute", left: 0, width, height, }}>
+					{labelSkiaView && labelPercentages.map((percentage, index) => {
+						return <Group key={percentage}>{labelSkiaView(percentage, (1 - percentage) * height, index)}</Group>;
+					})}
 
-				{strokeWidth > 0 &&
-					<Line
-						p1={{ x: (maxWidth ?? width ?? 0) - strokeWidth, y: paddingTop }}
-						p2={{ x: (maxWidth ?? width ?? 0) - strokeWidth, y: height - paddingBottom }}
-						color={strokeColor}
-						strokeWidth={strokeWidth}
-					/>
-				}
-			</Canvas>
+					{strokeWidth > 0 &&
+						<Line
+							p1={{ x: (maxWidth ?? width ?? 0) - strokeWidth / 2, y: paddingTop }}
+							p2={{ x: (maxWidth ?? width ?? 0) - strokeWidth / 2, y: height - paddingBottom }}
+							color={strokeColor}
+							strokeWidth={strokeWidth}
+						/>
+					}
+				</Canvas>
+			}
 		</View>
 	);
 }

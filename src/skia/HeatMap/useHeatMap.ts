@@ -1,15 +1,16 @@
 import type { View } from "react-native-reanimated/lib/typescript/Animated";
-import type { DayData, HeatMapProps } from "./HeatMap";
+import type { CellDatum, HeatMapProps } from "./HeatMap";
 import { useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getPaddings } from "../common";
+import { rect, type SkHostRect } from "@shopify/react-native-skia";
 
 function useHeatMap({
-  startDate,
-  endDate,
+  rows,
   data,
   style,
   minValue,
   maxValue,
+  coalesceGroups,
   ref,
   popupStyle
 }: HeatMapProps) {
@@ -28,12 +29,9 @@ function useHeatMap({
     paddingBottom
   } = getPaddings(style);
 
-  const numberOfDaysInWeek = 7;
-  const numberOfRows = numberOfDaysInWeek;
-  const numberOfMsInDay = 1000 * 60 * 60 * 24;
-
+  const numberOfRows = rows;
   const [popupData, setPopupData] = useState<
-    { x: number; y: number; day: DayData; } | undefined
+    { x: number; y: number; data: CellDatum; } | undefined
   >(undefined);
 
   const [popupDimension, setPopupDimension] = useState({
@@ -43,54 +41,82 @@ function useHeatMap({
 
   const popupRef = useRef<View>(null);
 
-  const formatDate = (date: Date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-      2,
-      '0'
-    )}-${String(date.getDate()).padStart(2, '0')}`;
-
-  const { daysInRange, computedMin, computedMax } = useMemo(() => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    const output: DayData[] = [];
+  const { cellData, computedMin, computedMax, numberOfCols, totalInterGroupSpacing, xLabelsRect, groupInfos } = useMemo(() => {
     let computedMax = Number.MIN_VALUE;
     let computedMin = Number.MAX_VALUE;
 
-    const startDayOfWeek = start.getDay();
+    let nextRow = 0;
+    let nextCol = 0;
+    let xLabelsRect: SkHostRect[] = [];
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateStr = formatDate(d);
-      const value = data?.[dateStr] ?? 0;
+    let cellsInRange: CellDatum[] = [];
+    let totalInterGroupSpacing = 0;
+    let groupInfos: { startingX: number, endingX: number, startingCellIndex: number, lastCellIndex: number; }[] = [];
 
-      const dayOfWeek = d.getDay();
-      const daysFromStart = Math.floor(
-        (d.getTime() - start.getTime()) / numberOfMsInDay
-      );
+    data.forEach((datum, index) => {
+      let startingRow = datum.startingRow;
+      let currentCol = nextCol;
 
-      const week = Math.floor(
-        (startDayOfWeek + daysFromStart) / numberOfDaysInWeek
-      );
+      if (index !== 0 && (coalesceGroups === false || datum.startingRow < nextRow)) {
+        currentCol++;
+        let additionalGroupSpacing = coalesceGroups ? 0 : (style?.interGroupSpacing ?? 0);
+        totalInterGroupSpacing += additionalGroupSpacing;
+      }
 
-      computedMax = Math.max(computedMax, value);
-      computedMin = Math.min(computedMin, value);
+      let minX = Number.MAX_VALUE;
+      let maxX = Number.MIN_VALUE;
+      let firstIndexInGroup = cellsInRange.length;
+      let lastIndexInGroup = firstIndexInGroup;
 
-      output.push({
-        date: dateStr,
-        value,
-        dayOfWeek,
-        week,
-        x: week * (cellSize + cellGap),
-        y: dayOfWeek * (cellSize + cellGap),
+      for (let i = 0; i < datum.cols; i++) {
+        for (let j = startingRow; j < (i === datum.cols - 1 ? datum.endingRow + 1 : rows); j++) {
+          const value = datum.data?.[j]?.[i] ?? 0;
+          computedMax = Math.max(computedMax, value);
+          computedMin = Math.min(computedMin, value);
+
+          let x = currentCol * (cellSize + cellGap) + totalInterGroupSpacing;
+          let y = j * (cellSize + cellGap);
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          cellsInRange.push({
+            rowIndex: j,
+            colIndex: currentCol,
+            groupIndex: data.indexOf(datum),
+            value,
+            x: x,
+            y: y,
+          });
+          lastIndexInGroup = cellsInRange.length - 1;
+          nextRow = j + 1;
+        }
+
+        startingRow = 0;
+        if (nextRow == rows) {
+          currentCol++;
+          nextRow = 0;
+        }
+      }
+
+      nextCol = Math.max(nextCol, currentCol);
+      xLabelsRect.push(rect(minX, 0, maxX - minX + cellSize, style?.horizontalLabelStyle?.height ?? -1));
+      groupInfos.push({
+        startingX: minX,
+        endingX: maxX + cellSize,
+        startingCellIndex: firstIndexInGroup,
+        lastCellIndex: lastIndexInGroup
       });
-    }
+    });
 
     return {
-      daysInRange: output,
+      cellData: cellsInRange,
+      numberOfCols: nextCol + (nextRow > 0 ? 1 : 0),
+      totalInterGroupSpacing,
+      xLabelsRect,
+      groupInfos,
       computedMin: minValue !== undefined ? minValue : computedMin,
       computedMax: maxValue !== undefined ? maxValue : computedMax,
     };
-  }, [startDate, endDate, data, minValue, maxValue, cellSize, cellGap]);
+  }, [rows, data, minValue, maxValue, cellSize, cellGap]);
 
   // --- COLOR LOGIC ---
   const getColor = (value: number) => {
@@ -112,9 +138,8 @@ function useHeatMap({
   };
 
   // Heatmap size
-  const numWeeks = Math.ceil(daysInRange.length / 7 + 1);
-  const totalWidth = numWeeks * (cellSize + cellGap) + verticalLabelWidth;
-  const totalHeight = 7 * (cellSize + cellGap);
+  const totalWidth = numberOfCols * (cellSize + cellGap) + totalInterGroupSpacing + verticalLabelWidth;
+  const totalHeight = rows * (cellSize + cellGap) + horizontalLabelHeight;
 
   // --- POPUP MEASUREMENT ---
   useLayoutEffect(() => {
@@ -132,27 +157,55 @@ function useHeatMap({
       return;
     }
 
-    const col = Math.floor(x / (cellSize + cellGap));
-    const row = Math.floor(y / (cellSize + cellGap));
+    let cellIndex: number | undefined = undefined;
 
-    const start = new Date(startDate);
-    const startDayOfWeek = start.getDay();
+    for (const [index, group] of groupInfos.entries()) {
+      if (x > group.endingX) continue;
+      if (x < group.startingX) continue;
 
-    const index = col * numberOfDaysInWeek + row;
+      let groupData = data[index];
+      if (!groupData) break;
 
-    if (
-      index >= startDayOfWeek &&
-      index - startDayOfWeek < daysInRange.length
-    ) {
-      const day = daysInRange[index - startDayOfWeek];
-      if (day) {
-        setPopupData({
-          x: col * (cellSize + cellGap),
-          y: row * (cellSize + cellGap),
-          day,
-        });
-        return;
+      let colIndex = Math.floor((x - group.startingX) / (cellSize + cellGap));
+      let rowIndex = Math.floor(y / (cellSize + cellGap));
+      let firstRowCells = rows - groupData.startingRow;
+
+      if (colIndex < 0 || colIndex >= groupData.cols || rowIndex < 0 || rowIndex >= rows) {
+        break;
       }
+
+      let cellColStartingCellIndex = group.startingCellIndex + Math.max(0, colIndex - 1) * rows;
+      if (colIndex !== 0) {
+        cellColStartingCellIndex += firstRowCells;
+        cellIndex = cellColStartingCellIndex + rowIndex;
+      } else {
+        cellIndex = cellColStartingCellIndex + rowIndex - groupData.startingRow;
+      }
+
+      if (cellIndex < 0 || cellIndex >= cellData.length) {
+        console.error("Calculated cell index is out of bounds:", cellIndex);
+        cellIndex = undefined;
+        break;
+      }
+      let cell = cellData[cellIndex];
+      if (!cell || x < cell.x || x > cell.x + cellSize || y < cell.y || y > cell.y + cellSize) {
+        cellIndex = undefined;
+      }
+      break;
+    }
+
+    if (cellIndex === undefined) {
+      setPopupData(undefined);
+      return;
+    }
+    const cellDatum = cellData[cellIndex];
+    if (cellDatum) {
+      setPopupData({
+        x: cellDatum.x,
+        y: cellDatum.y,
+        data: cellDatum,
+      });
+      return;
     }
 
     setPopupData(undefined);
@@ -168,7 +221,7 @@ function useHeatMap({
   }), [ref]);
 
   return {
-    daysInRange,
+    cellData,
     computedMin,
     computedMax,
     totalWidth,
@@ -188,7 +241,8 @@ function useHeatMap({
     paddingLeft,
     paddingRight,
     paddingTop,
-    paddingBottom
+    paddingBottom,
+    xLabelsRect
   };
 }
 

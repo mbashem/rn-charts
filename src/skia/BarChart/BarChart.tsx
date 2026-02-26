@@ -6,13 +6,13 @@ import {
   GestureHandlerRootView,
   ScrollView,
 } from 'react-native-gesture-handler';
-import { Canvas, Rect, vec, Line, type SkHostRect, LinearGradient } from '@shopify/react-native-skia';
+import { Canvas, Rect, vec, type SkHostRect, LinearGradient } from '@shopify/react-native-skia';
 
 import { type CommonStyle } from '../common';
 import useBarChart from './useBarChart';
 import Popup, { type PopupStyle } from '../Popup';
 import VerticalLabelView, { type VerticalLabelStyle } from "../Common/VerticalLabelView";
-import HorizontalLabelView from "../Common/HorizontalLabelView";
+import HorizontalLabelView, { type HorizontalLabelStyle } from "../Common/HorizontalLabelView";
 
 export interface StackValue {
   value: number;
@@ -25,14 +25,15 @@ export interface BarData {
   label?: string;
 }
 
-export interface BarChartStyle extends CommonStyle, VerticalLabelStyle {
+export interface BarChartStyle extends CommonStyle {
   width?: number;
   height?: number;
   barWidth?: number;
   barSpacing?: number;
   firstBarLeadingSpacing?: number;
   lastBarTrailingSpacing?: number;
-  strokeWidth?: number;
+  verticalLabelStyle?: VerticalLabelStyle;
+  horizontalLabelStyle?: HorizontalLabelStyle;
 }
 
 export interface BarChartProps {
@@ -65,13 +66,13 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
     verticalLabelWidth,
     setVerticalLabelWidth,
     chartHeight,
-    strokeWidth,
     tooltip,
     setBottomLabelHeight,
     onScroll,
     touchHandler,
     totalHeight,
     totalWidth,
+    horizontalStrokeWidth
   } = useBarChart(props);
 
   const panGestureRef = useRef(Gesture.Pan());
@@ -129,10 +130,8 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
               }}
               labelPercentages={yLabels}
               styles={{
-                width: props.style?.yLabelWidth,
-                height: chartHeight,
-                strokeWidth,
-                backgroundColor: props.style?.yLabelBackgroundColor
+                height: chartHeight + horizontalStrokeWidth,
+                verticalLabelStyle: props.style?.verticalLabelStyle,
               }}
               labelSkiaView={(percentage, yPosition) => yLabelSkiaView?.(percentage, yPosition)}
             >
@@ -141,21 +140,12 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
           }
           <ScrollView horizontal={true} simultaneousHandlers={panGestureRef} style={{ padding: 0 }}>
             <GestureDetector gesture={canvasGestures}>
-
               <Canvas
                 style={{
                   width: canvasWidth,
                   height: chartHeight,
                 }}
               >
-                {/* X axis */}
-                <Line
-                  p1={vec(0, chartHeight)}
-                  p2={vec(canvasWidth, chartHeight)}
-                  color="white"
-                  strokeWidth={strokeWidth}
-                />
-
                 {/* Bars */}
 
                 {rectangles.map((bar, xIndex) => {
@@ -200,13 +190,14 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
           <HorizontalLabelView
             labels={rectangles.map(bar => bar.label)}
             positions={rectangles.map(bar => bar.x)}
-            styles={{
+            style={{
               left: verticalLabelWidth,
               width: canvasWidth,
+              horizontalLabelStyle: props.style?.horizontalLabelStyle
             }}
             onLayout={(event) => setBottomLabelHeight(event.nativeEvent.layout.height)}
           >
-            {label => xLabelView(label)}
+            {(_index, data) => xLabelView(data)}
           </HorizontalLabelView>
         }
         {tooltip && (

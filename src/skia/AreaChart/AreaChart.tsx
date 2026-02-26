@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { lighten } from '../../util/colors';
 import Popup, { type PopupStyle } from '../Popup';
 import VerticalLabelView, { type VerticalLabelStyle } from "../Common/VerticalLabelView";
-import HorizontalLabelView from "../Common/HorizontalLabelView";
+import HorizontalLabelView, { type HorizontalLabelStyle } from "../Common/HorizontalLabelView";
 
 export interface AreaData {
   values: number[];
@@ -22,6 +22,8 @@ export interface AreaChartStyle extends CommonStyle, VerticalLabelStyle {
   pointRadius?: number;
   lightenPointsBy?: number;
   strokeWidth?: number;
+  verticalLabelStyle?: VerticalLabelStyle;
+  horizontalLabelStyle?: HorizontalLabelStyle;
 }
 
 export interface AreaChartProps {
@@ -82,10 +84,8 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
             }}
             labelPercentages={yLabels}
             styles={{
-              width: props.style?.yLabelWidth,
               height: areaCanvasHeight,
-              strokeWidth: verticalLabelStrokeWidth,
-              backgroundColor: props.style?.yLabelBackgroundColor
+              verticalLabelStyle: props.style?.verticalLabelStyle,
             }}
           >
             {percentage => yLabelView(percentage, minValue, maxValue)}
@@ -126,7 +126,7 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
         <HorizontalLabelView
           labels={xLabelsData.map(labelData => labelData.label)}
           positions={xLabelsData.map(labelData => labelData.xPosition)}
-          styles={{
+          style={{
             left: verticalLabelWidth,
             width: chartWidth,
           }}
