@@ -114,7 +114,7 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, cellS
   }, [popupData, onSelectView, cellSize]);
 
   return <View
-    style={{ backgroundColor: props.style?.backgroundColor }}
+    style={{ backgroundColor: props.style?.backgroundColor, paddingLeft, paddingRight, paddingTop, paddingBottom }}
     ref={(view) => {
       view?.measureInWindow((fx, fy) => {
         setViewOffset((prev) => {
@@ -192,19 +192,20 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, cellS
           <View
             style={{
               position: "absolute",
-              top: popupData.y + (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight),
-              left: popupData.x + verticalLabelWidth
+              top: popupData.y + (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight) + paddingTop,
+              left: popupData.x + verticalLabelWidth + paddingLeft
             }}
           >
             {onSelectViewMemo}
           </View>
         }
         <Popup
-          popupData={{ x: popupData.x + verticalLabelWidth, y: popupData.y + (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight), data: popupData.data }}
+          popupData={{ x: popupData.x + verticalLabelWidth + paddingLeft, y: popupData.y + (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight) + paddingTop, data: popupData.data }}
           totalWidth={totalWidth}
           totalHeight={totalHeight}
           touchHandler={(x, y) => {
-            touchHandler(x - verticalLabelWidth - paddingLeft, y - (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight));
+            console.log(x, y)
+            touchHandler(x - verticalLabelWidth - paddingLeft, y - (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight) - paddingTop);
           }}
           onTouchOutside={onTouchOutside}
           popupStyle={props.popupStyle}

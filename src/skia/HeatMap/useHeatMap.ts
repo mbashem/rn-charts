@@ -98,7 +98,7 @@ function useHeatMap({
       }
 
       nextCol = Math.max(nextCol, currentCol);
-      xLabelsRect.push(rect(minX, 0, maxX - minX + cellSize, style?.horizontalLabelStyle?.height ?? -1));
+      xLabelsRect.push(rect(minX, 0, maxX - minX + cellSize + 1, style?.horizontalLabelStyle?.height ?? -1));
       groupInfos.push({
         startingX: minX,
         endingX: maxX + cellSize,
