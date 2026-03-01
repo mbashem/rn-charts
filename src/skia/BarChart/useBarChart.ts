@@ -4,6 +4,8 @@ import { arrayFrom, isDefined } from "../../util/util";
 import type { StackValue, BarChartProps } from "./BarChart";
 import { useWindowDimensions } from "react-native";
 import { getPaddings } from "../common";
+import { useSharedValue } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 
 export default function useBarChart(
 	{
@@ -11,7 +13,8 @@ export default function useBarChart(
 		style,
 		maxValue,
 		minValue,
-		yLabels
+		yLabels,
+		overscanRatio
 	}: BarChartProps
 ) {
 	const { maxValueCalculated, minValueCalculated } = useMemo(() => {
@@ -75,10 +78,11 @@ export default function useBarChart(
 
 	const scrollAreaWidth = initialSpacing + data.length * chartBarWidth + (Math.max(0, data.length - 1) * chartBarSpacing) + endSpacing;
 	const canvasWidth = Math.min(scrollAreaWidth, totalWidth - verticalLabelWidth - paddingRight - paddingLeft);
+	const overscanArea = totalWidth * (overscanRatio ?? 0.5);
+	const leftBoundary = startX - overscanArea;
 
 	const rectangles = useMemo(() => {
-		let leftBoundary = Math.max(0, startX - totalWidth);
-		let rightBoundary = startX + totalWidth;
+		let rightBoundary = startX + totalWidth + overscanArea;
 
 		let startArrayIndex = Math.floor(Math.max(leftBoundary - initialSpacing, 0) / (chartBarWidth + chartBarSpacing));
 		let endArrayIndex = Math.min(Math.ceil(rightBoundary / (chartBarWidth + chartBarSpacing)), data.length);
@@ -86,7 +90,7 @@ export default function useBarChart(
 		return data.slice(startArrayIndex, endArrayIndex)
 			.map((bar, xIndex) => {
 				let previousHeight = 0;
-				const x = initialSpacing + (xIndex + startArrayIndex) * (chartBarWidth + chartBarSpacing) - leftBoundary;
+				const x = initialSpacing + (xIndex + startArrayIndex) * (chartBarWidth + chartBarSpacing);
 				return {
 					bars: bar.values.map((item, yIndex) => {
 						const barHeight =
@@ -120,19 +124,18 @@ export default function useBarChart(
 			return;
 		}
 
-		let xIndex = -1;
-		let startingXIndex = 0;
-
-		if (touchedX >= rectangles[0]!.x && touchedX <= rectangles[0]!.x + rectangles[0]!.bars[0]!.rect.width) {
-			xIndex = 0;
-			startingXIndex = Math.max(0, rectangles[0]!.x);
-		} else if (touchedX >= rectangles[0]!.x) {
-			xIndex = Math.floor((touchedX - (rectangles[0]!.x + chartBarWidth) - chartBarSpacing) / (chartBarWidth + chartBarSpacing)) + 1;
-			startingXIndex = rectangles[xIndex]!.x;
+		let firstX = rectangles[0]!.x - startX
+		let spaceBetween = touchedX - firstX
+		if(spaceBetween < 0) {
+			setTooltip(undefined);
+			return;
 		}
 
-		if (xIndex === -1 || (touchedX < rectangles[xIndex]!.x || touchedX > rectangles[xIndex]!.x + chartBarWidth)) {
-			console.log('Touch is outside the bar width, ignoring.');
+		let xIndex = Math.floor(spaceBetween / (chartBarWidth + chartBarSpacing));
+		let startingXIndex = rectangles[xIndex]!.x - startX;
+
+		if (xIndex === -1 || (touchedX < rectangles[xIndex]!.x - startX|| touchedX > rectangles[xIndex]!.x - startX + chartBarWidth)) {
+			console.log('Touch is outside the bar width, ignoring.', xIndex);
 			setTooltip(undefined);
 			return;
 		}
@@ -172,18 +175,21 @@ export default function useBarChart(
 		});
 	};
 
+	const offset = useSharedValue(0);
+
 	function onScroll(translateX: number) {
-		setTooltip(undefined);
-		setStartX((prev) => {
-			let newX = prev + translateX;
-			if (newX < 0) return 0;
-			if (newX + canvasWidth > scrollAreaWidth)
-				return Math.max(0, scrollAreaWidth - canvasWidth);
-			return newX;
-		});
+		'worklet';
+		let prev = offset.value;
+		let newX = Math.max(0, prev + translateX);
+		if (newX + canvasWidth > scrollAreaWidth)
+			newX = Math.max(0, scrollAreaWidth - canvasWidth);
+		offset.set(newX);
+		scheduleOnRN(setTooltip, undefined);
+		scheduleOnRN(setStartX, newX);
 	}
 
 	return {
+		offset,
 		maxValueCalculated,
 		minValueCalculated,
 		canvasWidth,
@@ -205,6 +211,7 @@ export default function useBarChart(
 		setTooltip,
 		touchHandler,
 		onScroll,
+		startX,
 		totalHeight,
 		totalWidth,
 		yLabels,

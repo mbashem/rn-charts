@@ -1,4 +1,4 @@
-import React, { Fragment, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import {
   GestureDetector,
@@ -6,13 +6,14 @@ import {
   GestureHandlerRootView,
   ScrollView,
 } from 'react-native-gesture-handler';
-import { Canvas, Rect, vec, type SkHostRect, LinearGradient } from '@shopify/react-native-skia';
+import { Canvas, Rect, vec, type SkHostRect, LinearGradient, Group, rect as SKRect, type AnimatedProp, type Transforms3d } from '@shopify/react-native-skia';
 
 import { type CommonStyle } from '../common';
 import useBarChart from './useBarChart';
 import Popup, { type PopupStyle } from '../Popup';
 import VerticalLabelView, { type VerticalLabelStyle } from "../Common/VerticalLabelView";
 import HorizontalLabelView, { type HorizontalLabelStyle } from "../Common/HorizontalLabelView";
+import { useDerivedValue } from "react-native-reanimated";
 
 export interface StackValue {
   value: number;
@@ -48,6 +49,7 @@ export interface BarChartProps {
   onSelectBarSkiaView?: (rect: SkHostRect, stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
   maxValue?: number;
   minValue?: number;
+  overscanRatio?: number;
   popupStyle?: PopupStyle<StackValue>;
   style?: BarChartStyle;
 }
@@ -72,16 +74,19 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
     touchHandler,
     totalHeight,
     totalWidth,
-    horizontalStrokeWidth
+    horizontalStrokeWidth,
+    startX,
+    offset
   } = useBarChart(props);
 
   const panGestureRef = useRef(Gesture.Pan());
+
   const panGesture = Gesture.Pan()
-    .runOnJS(true)
     .onChange((event) => {
       onScroll(-event.changeX);
     })
     .withRef(panGestureRef);
+
   const tapGesture = Gesture.Tap()
     .runOnJS(true)
     .onStart((event) => {
@@ -98,6 +103,7 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
     if (tooltip === undefined) { return undefined; }
     return onSelectBarSkiaView?.(tooltip.rect, tooltip.data, tooltip.xLabel);
   }, [tooltip]);
+  const canvasGroupTranslate = useDerivedValue<Transforms3d>(() => [{ translateX: -offset.value }], []);
 
   return (
     <GestureHandlerRootView>
@@ -146,40 +152,40 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
                   height: chartHeight,
                 }}
               >
-                {/* Bars */}
-
-                {rectangles.map((bar, xIndex) => {
-                  if (bar.bars.length === 0) return null;
-                  return (
-                    <Fragment key={xIndex}>
-                      {bar.bars.map(({ rect, stackValue }, yIndex) => {
-                        let skiaView = barSkiaView?.(rect, stackValue, bar.label);
-                        if (skiaView !== undefined) { return skiaView; }
-                        let currentData = props.data[xIndex]!.values[yIndex]!;
-                        let color =
-                          props?.colors?.[currentData.id ?? currentData.label];
-                        return (
-                          <Rect
-                            key={xIndex + '-' + yIndex}
-                            x={rect.x}
-                            y={rect.y}
-                            width={rect.width}
-                            height={rect.height}
-                            color={Array.isArray(color) ? undefined : color}
-                          >
-                            {Array.isArray(color) && (
-                              <LinearGradient
-                                start={vec(rect.x, rect.y)}
-                                end={vec(rect.x + rect.width, rect.y + rect.height)}
-                                colors={color}
-                              />
-                            )}
-                          </Rect>
-                        );
-                      })}
-                    </Fragment>
-                  );
-                })}
+                <Group transform={canvasGroupTranslate}>
+                  {rectangles.map((bar, xIndex) => {
+                    if (bar.bars.length === 0) return null;
+                    return (
+                      <Group key={xIndex}>
+                        {bar.bars.map(({ rect, stackValue }, yIndex) => {
+                          let skiaView = barSkiaView?.(SKRect(rect.x, rect.y, rect.width, rect.height), stackValue, bar.label);
+                          if (skiaView !== undefined) { return <Group key={xIndex + "-" + yIndex}>{skiaView}</Group>; }
+                          let currentData = props.data[xIndex]!.values[yIndex]!;
+                          let color =
+                            props?.colors?.[currentData.id ?? currentData.label];
+                          return (
+                            <Rect
+                              key={xIndex + '-' + yIndex}
+                              x={rect.x}
+                              y={rect.y}
+                              width={rect.width}
+                              height={rect.height}
+                              color={Array.isArray(color) ? undefined : color}
+                            >
+                              {Array.isArray(color) && (
+                                <LinearGradient
+                                  start={vec(rect.x, rect.y)}
+                                  end={vec(rect.x + rect.width, rect.y + rect.height)}
+                                  colors={color}
+                                />
+                              )}
+                            </Rect>
+                          );
+                        })}
+                      </Group>
+                    );
+                  })}
+                </Group>
                 {onSelectBarSkiaViewMemo}
               </Canvas>
             </GestureDetector>
@@ -190,6 +196,8 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
           <HorizontalLabelView
             labels={rectangles.map(bar => bar.label)}
             positions={rectangles.map(bar => bar.x)}
+            transform={canvasGroupTranslate}
+            xOffset={offset}
             style={{
               left: verticalLabelWidth,
               width: canvasWidth,

@@ -1,7 +1,8 @@
 import { View, type LayoutChangeEvent } from "react-native";
 import { getPaddings, type CommonStyle } from '../common';
 import React, { useEffect, useState } from "react";
-import { Canvas, Group, Line } from "@shopify/react-native-skia";
+import { Canvas, Group, Line, type AnimatedProp, type Transforms3d } from "@shopify/react-native-skia";
+import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 
 export interface HorizontalLabelStyle {
 	height?: number;
@@ -26,12 +27,14 @@ interface HorizontalLabelProps<T> {
 	positions: number[];
 	style: HorizontalLabelViewStyle;
 	onLayout?: (event: LayoutChangeEvent) => void;
-	children?: (index: number, data: T) => JSX.Element | undefined;
+	children?: (index: number, data: T) => React.JSX.Element | undefined;
 	labelSkiaView?: (
 		yPosition: number,
 		index: number,
 		data: T,
 	) => React.JSX.Element | undefined;
+	transform?: AnimatedProp<Transforms3d>;
+	xOffset?: SharedValue<number>;
 }
 
 function HorizontalLabelView<T>({
@@ -40,7 +43,9 @@ function HorizontalLabelView<T>({
 	style,
 	onLayout,
 	children,
-	labelSkiaView
+	labelSkiaView,
+	transform,
+	xOffset
 }: HorizontalLabelProps<T>) {
 	const {
 		width,
@@ -77,11 +82,12 @@ function HorizontalLabelView<T>({
 				onLayout?.(event);
 			}}
 		>
-			<View style={{ position: "relative", height: (maxHeight ?? 0), paddingVertical: 0 }}>
+			<View style={{ position: "relative", height: (maxHeight ?? 0), top: strokeWidth, paddingVertical: 0 }}>
 				{labels.map((label, index) => {
-					return <View
+					return <LabelViewWrapper
 						key={index}
-						style={{ position: "absolute", left: positions[index], top: strokeWidth, backgroundColor: "purple" }}
+						leftPosition={positions[index]}
+						xOffset={xOffset}
 						onLayout={(event) => {
 							let height = event.nativeEvent.layout.height;
 							if (horizontalLabelStyle.height !== undefined)
@@ -96,28 +102,52 @@ function HorizontalLabelView<T>({
 						}}
 					>
 						{children?.(index, label)}
-					</View>;
+					</LabelViewWrapper>;
 				})}
 			</View>
 			{(labelSkiaView || strokeWidth > 0) &&
 				<Canvas style={{ position: "absolute", width, height: labelSkiaView ? (maxHeight ?? 0) : strokeWidth, }}>
-					{labelSkiaView && labels.map((label, index) => {
-						let yPosition = positions[index];
-						if (yPosition === undefined) return null;
-						return <Group key={index}>{labelSkiaView(yPosition, index, label)}</Group>;
-					})}
-					{strokeWidth > 0 &&
-						<Line
-							p1={{ x: paddingLeft, y: strokePosition === "top" ? strokeWidth / 2 : (maxHeight ?? height ?? 0) - strokeWidth / 2 }}
-							p2={{ x: width, y: strokePosition === "top" ? strokeWidth / 2 : (maxHeight ?? height ?? 0) - strokeWidth / 2 }}
-							color={strokeColor}
-							strokeWidth={strokeWidth}
-						/>
-					}
+					<Group transform={transform}>
+						{labelSkiaView && labels.map((label, index) => {
+							let yPosition = positions[index];
+							if (yPosition === undefined) return null;
+							return <Group key={index}>{labelSkiaView(yPosition, index, label)}</Group>;
+						})}
+						{strokeWidth > 0 &&
+							<Line
+								p1={{ x: paddingLeft, y: strokePosition === "top" ? strokeWidth / 2 : (maxHeight ?? height ?? 0) - strokeWidth / 2 }}
+								p2={{ x: width, y: strokePosition === "top" ? strokeWidth / 2 : (maxHeight ?? height ?? 0) - strokeWidth / 2 }}
+								color={strokeColor}
+								strokeWidth={strokeWidth}
+							/>
+						}
+					</Group>
 				</Canvas>
 			}
 		</View >
 	);
+}
+
+interface LabelViewWrapperProps {
+	leftPosition?: number;
+	xOffset?: SharedValue<number>;
+	onLayout: ((event: LayoutChangeEvent) => void) | undefined;
+	children?: React.JSX.Element | undefined;
+};
+
+function LabelViewWrapper(props: LabelViewWrapperProps) {
+	const labelContainerStyle = useAnimatedStyle(() => {
+		return {
+			position: "absolute", left: props.leftPosition ? props.leftPosition - (props.xOffset?.get() ?? 0) : undefined,
+		};
+	}, [props.leftPosition]);
+
+	return <Animated.View
+		style={labelContainerStyle}
+		onLayout={(event) => props.onLayout?.(event)}
+	>
+		{props.children}
+	</Animated.View >;
 }
 
 export default HorizontalLabelView;
