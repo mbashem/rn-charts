@@ -6,7 +6,7 @@ import {
   GestureHandlerRootView,
   ScrollView,
 } from 'react-native-gesture-handler';
-import { Canvas, Rect, vec, type SkHostRect, LinearGradient, Group, rect as SKRect, type AnimatedProp, type Transforms3d } from '@shopify/react-native-skia';
+import { Canvas, Rect, vec, type SkHostRect, LinearGradient, Group, rect as SKRect, type Transforms3d } from '@shopify/react-native-skia';
 
 import { type CommonStyle } from '../common';
 import useBarChart from './useBarChart';
@@ -41,9 +41,9 @@ export interface BarChartProps {
   data: BarData[];
   colors?: Record<string, string | string[]>;
   yLabels: number[];
-  yLabelView?: (percentage: number, min: number, max: number) => JSX.Element;
-  yLabelSkiaView?: (percentage: number, yPosition: number) => JSX.Element | undefined;
-  xLabelView?: (label?: string) => JSX.Element;
+  yLabelView?: (percentage: number, min: number, max: number) => React.JSX.Element;
+  yLabelSkiaView?: (percentage: number, yPosition: number) => React.JSX.Element | undefined;
+  xLabelView?: (label?: string) => React.JSX.Element;
   onSelectBarView?: (stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
   barSkiaView?: (rect: SkHostRect, stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
   onSelectBarSkiaView?: (rect: SkHostRect, stackValue: StackValue, xLabel?: string) => React.JSX.Element | undefined;
@@ -215,12 +215,22 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
                 style={{
                   position: "absolute",
                   top: tooltip.rect.y + paddingTop,
-                  left: verticalLabelWidth + paddingLeft + tooltip.rect.x,
+                  left: verticalLabelWidth + paddingLeft + Math.max(0, tooltip.rect.x),
                   width: tooltip.rect.width,
                   height: tooltip.rect.height,
-                }}
-              >
-                {onSelectBarViewMemo}
+                  overflow: "hidden",
+                }}>
+                <View
+                  style={{
+                    position: "relative",
+                    top: 0,
+                    left: -Math.max(0, -tooltip.rect.x),
+                    width: tooltip.rect.width,
+                    height: tooltip.rect.height,
+                  }}
+                >
+                  {onSelectBarViewMemo}
+                </View>
               </View>
             }
             <Popup
@@ -235,6 +245,7 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
               touchHandler={(x, y) => {
                 touchHandler(x - verticalLabelWidth - paddingLeft, y);
               }}
+              onTouchOutside={() => touchHandler(-1, -1)}
               viewOffset={viewOffset}
             />
           </>
