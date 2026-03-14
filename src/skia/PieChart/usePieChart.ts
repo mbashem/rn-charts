@@ -1,18 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { PieChartProps, PieChartStyles, PieSlice, PopupData } from "./PieChart";
-import { rect, Skia } from "@shopify/react-native-skia";
+import { rect, rrect, Skia } from "@shopify/react-native-skia";
 import { getRandomRGBColor } from "../common";
 
-function deegreesToRadians(degrees: number): number {
+function degreesToRadians(degrees: number): number {
 	return (degrees * Math.PI) / 180;
 }
 
 function ypoint(angle: number, radius: number, cy: number): number {
-	return cy - radius * Math.sin(deegreesToRadians(angle));
+	return cy - radius * Math.sin(degreesToRadians(angle));
 }
 
 function xpoint(angle: number, radius: number, cx: number): number {
-	return cx - radius * Math.cos(deegreesToRadians(angle));
+	return cx - radius * Math.cos(degreesToRadians(angle));
 }
 
 function getCircularPoints(
@@ -41,63 +41,107 @@ export function usePieChart({
 	const radius = style.radius ?? 150;
 	const diameter = radius * 2;
 	const innerRadius = style.innerRadius ?? 100;
+	const interSliceGap = style.interSliceGap ?? 20;
 	const cx = radius;
 	const cy = radius;
 
-	const total = slices.reduce((sum, slice) => sum + slice.value, 0);
 
 	let startAngle = 0;
 
-	const paths = slices.map(({ value, color }, index) => {
-		const sweepAngle = (value / total) * 360;
+	const { paths, total } = useMemo(() => {
+		const total = slices.reduce((sum, slice) => sum + slice.value, 0);
 
-		let [x1, y1, x2, y2] = getCircularPoints(
-			startAngle,
-			radius,
-			sweepAngle,
-			cx,
-			cy
-		);
-		let [cx1, cy1, cx2, cy2] = getCircularPoints(
-			startAngle,
-			innerRadius,
-			sweepAngle,
-			cx,
-			cy
-		);
+		const paths = slices.map(({ value, color }, index) => {
+			let rounded = style?.roundedSlice ?? false;
+			const sweepAngleTobeAdded = (value / total) * 360;
+			let currentStartAngle = startAngle;
+			let sweepAngle = sweepAngleTobeAdded;
+			startAngle += sweepAngleTobeAdded;
 
-		const path = Skia.Path.Make();
-		path.moveTo(cx1, cy1);
-		path.lineTo(x1, y1);
-		path.addArc(
-			rect(
-				cx - radius,
-				cy - radius,
-				radius * 2,
-				radius * 2
-			),
-			startAngle + 180,
-			sweepAngle
-		);
-		path.lineTo(cx2, cy2);
+			const sliceThickness = radius - innerRadius;
+			const outerCircleLength = 2 * Math.PI * radius;
+			// TODO: ROUND EACH edge points instead of just adding a circle at the end of the slice, because when the slice is small, the circle can be bigger than the slice itself, which looks weird. Also, when the slice is big, the circle can be too small to notice.
+			let angleReductionForGap = !interSliceGap ? 0 : (interSliceGap / outerCircleLength) * 360;
+			let angleReductionForRounding = !rounded ? 0 : (sliceThickness * 2 / outerCircleLength) * 360;
 
-		path.addArc(
-			rect(
-				cx - innerRadius,
-				cy - innerRadius,
-				innerRadius * 2,
-				innerRadius * 2
-			),
-			startAngle + 180 + sweepAngle,
-			-sweepAngle
-		);
-		path.lineTo(x1, y1);
-		path.close();
+			let angleReduction = angleReductionForGap + angleReductionForRounding;
+			currentStartAngle += angleReduction / 2;;
+			sweepAngle -= angleReduction / 2;
+			console.log(`Slice ${index}: angleReductionForGap=${angleReductionForGap}, angleReductionForRounding=${angleReductionForRounding}, totalAngleReduction=${angleReduction}, startAngle: ${currentStartAngle}, sweepAngle: ${sweepAngle}`);
+			console.log(`Slice ${index}: sliceThickness=${sliceThickness}`);
 
-		startAngle += sweepAngle;
+			let [x1, y1, x2, y2] = getCircularPoints(
+				currentStartAngle,
+				radius,
+				sweepAngle,
+				cx,
+				cy
+			);
+			let [cx1, cy1, cx2, cy2] = getCircularPoints(
+				currentStartAngle,
+				innerRadius,
+				sweepAngle,
+				cx,
+				cy
+			);
 
-		return { path, color: color ?? getRandomRGBColor() };
-	});
+			// console.log(`Slice ${index}: x1=${x1}, y1=${y1}, x2=${x2}, y2=${y2}, sliceRadius=${sliceRadius}`);
+			let path = Skia.Path.Make();
+
+			if (rounded) {
+				let capStartX = (x1 + cx1) / 2 - sliceThickness / 2;
+				let capStartY = (y1 + cy1) / 2 - sliceThickness / 2;
+
+				const sliceRadius = sliceThickness / 2;
+
+				path.addRRect(rrect(rect(capStartX, capStartY, sliceThickness, sliceThickness), sliceRadius, sliceRadius));
+			}
+
+			// path.moveTo(x1, y1);
+			path.addArc(
+				rect(
+					cx - radius,
+					cy - radius,
+					radius * 2,
+					radius * 2
+				),
+				currentStartAngle + 180,
+				sweepAngle
+			);
+			path.lineTo(cx2, cy2);
+
+			path.addArc(
+				rect(
+					cx - innerRadius,
+					cy - innerRadius,
+					innerRadius * 2,
+					innerRadius * 2
+				),
+				currentStartAngle + 180 + sweepAngle,
+				-sweepAngle
+			);
+
+			path.lineTo(x1, y1);
+			if (rounded) {
+				let capEndX = (x2 + cx2) / 2 - sliceThickness / 2;
+				let capEndY = (y2 + cy2) / 2 - sliceThickness / 2;
+
+				const sliceRadius = sliceThickness / 2;
+				path.addRRect(rrect(rect(capEndX, capEndY, sliceThickness, sliceThickness), sliceRadius, sliceRadius));
+			}
+			path.close();
+			return { path, color: color ?? getRandomRGBColor() };
+		});
+		return { paths, total };
+	}, [
+		slices,
+		style?.roundedSlice,
+		radius,
+		innerRadius,
+		interSliceGap,
+		cx,
+		cy
+	]);
 
 	const touchHandler = (locationX: number, locationY: number) => {
 		if (!onSliceTouch || locationX < 0 || locationY < 0 || locationX >= diameter || locationY >= diameter) {

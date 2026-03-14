@@ -15,12 +15,14 @@ export type PieSlice = {
   value: number;
   color?: string;
   label?: string;
+  radius?: number;
 };
 
 export type PieChartProps = {
   slices: PieSlice[];
   style: PieChartStyles;
   centerView?: React.ReactNode;
+  centerSkiaView?: (centerX: number, centerY: number, radius: number) => React.ReactNode;
   onSliceTouch?: (slice: PieSlice | undefined) => void;
   popupStyle?: PopupStyle<PieSlice>;
 };
@@ -29,13 +31,15 @@ export interface PieChartStyles extends CommonStyle {
   radius?: number;
   innerRadius?: number;
   innerColor?: string;
+  roundedSlice?: boolean;
+  interSliceGap?: number;
 }
 
-function PieChart(props: PieChartProps) {
+function PieChart({ popupStyle, centerSkiaView, centerView, ...props }: PieChartProps) {
   const { radius, innerRadius, paths, popupData, touchHandler } =
     usePieChart(props);
-  const { style, centerView, popupStyle } = props;
 
+  const { style } = props;
   const paddingTop = style.paddingTop ?? style.padding ?? 0;
   const paddingBottom = style.paddingBottom ?? style.padding ?? 0;
   const paddingLeft = style.paddingLeft ?? style.padding ?? 0;
@@ -90,8 +94,9 @@ function PieChart(props: PieChartProps) {
         }
       >
         {paths.map(({ path, color }, index) => (
-          <Path key={index} path={path} color={color} stroke={{ width: 5 }} />
+          <Path key={index} path={path} color={color} />
         ))}
+        {centerSkiaView && centerSkiaView(radius, radius, innerRadius)}
       </Canvas>
       {popupData && (
         <Popup
