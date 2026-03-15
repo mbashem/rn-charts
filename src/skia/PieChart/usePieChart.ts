@@ -59,16 +59,14 @@ export function usePieChart({
 			startAngle += sweepAngleTobeAdded;
 
 			const sliceThickness = radius - innerRadius;
-			const outerCircleLength = 2 * Math.PI * radius;
-			// TODO: ROUND EACH edge points instead of just adding a circle at the end of the slice, because when the slice is small, the circle can be bigger than the slice itself, which looks weird. Also, when the slice is big, the circle can be too small to notice.
-			let angleReductionForGap = !interSliceGap ? 0 : (interSliceGap / outerCircleLength) * 360;
-			let angleReductionForRounding = !rounded ? 0 : (sliceThickness * 2 / outerCircleLength) * 360;
+			const midRadius = (radius + innerRadius) / 2;
+			const middleCircleLength = 2 * Math.PI * midRadius;
+			let angleReductionForGap = !interSliceGap ? 0 : (interSliceGap / middleCircleLength) * 360;
+			let angleReductionForRounding = !rounded ? 0 : (sliceThickness / middleCircleLength) * 360;
 
 			let angleReduction = angleReductionForGap + angleReductionForRounding;
 			currentStartAngle += angleReduction / 2;;
-			sweepAngle -= angleReduction / 2;
-			console.log(`Slice ${index}: angleReductionForGap=${angleReductionForGap}, angleReductionForRounding=${angleReductionForRounding}, totalAngleReduction=${angleReduction}, startAngle: ${currentStartAngle}, sweepAngle: ${sweepAngle}`);
-			console.log(`Slice ${index}: sliceThickness=${sliceThickness}`);
+			sweepAngle -= angleReduction;
 
 			let [x1, y1, x2, y2] = getCircularPoints(
 				currentStartAngle,
@@ -85,7 +83,6 @@ export function usePieChart({
 				cy
 			);
 
-			// console.log(`Slice ${index}: x1=${x1}, y1=${y1}, x2=${x2}, y2=${y2}, sliceRadius=${sliceRadius}`);
 			let path = Skia.Path.Make();
 
 			if (rounded) {
@@ -97,7 +94,6 @@ export function usePieChart({
 				path.addRRect(rrect(rect(capStartX, capStartY, sliceThickness, sliceThickness), sliceRadius, sliceRadius));
 			}
 
-			// path.moveTo(x1, y1);
 			path.addArc(
 				rect(
 					cx - radius,
