@@ -31,12 +31,11 @@ export interface PieChartStyles extends CommonStyle {
   radius?: number;
   innerRadius?: number;
   innerColor?: string;
-  roundedSlice?: boolean;
   interSliceGap?: number;
 }
 
 function PieChart({ popupStyle, centerSkiaView, centerView, ...props }: PieChartProps) {
-  const { radius, innerRadius, paths, popupData, touchHandler } =
+  const { radius, width, height, cx, cy, innerRadius, paths, popupData, touchHandler } =
     usePieChart(props);
 
   const { style } = props;
@@ -70,8 +69,8 @@ function PieChart({ popupStyle, centerSkiaView, centerView, ...props }: PieChart
         <View
           style={{
             position: 'absolute',
-            top: paddingTop + radius - innerRadius,
-            left: paddingLeft + radius - innerRadius,
+            top: paddingTop + cx - innerRadius,
+            left: paddingLeft + cy - innerRadius,
             width: innerRadius * 2,
             height: innerRadius * 2,
             borderRadius: innerRadius,
@@ -85,8 +84,8 @@ function PieChart({ popupStyle, centerSkiaView, centerView, ...props }: PieChart
       )}
       <Canvas
         style={{
-          width: radius * 2,
-          height: radius * 2,
+          width,
+          height,
           backgroundColor: style.backgroundColor ?? 'transparent',
         }}
         onTouchStart={(event) =>
@@ -96,7 +95,7 @@ function PieChart({ popupStyle, centerSkiaView, centerView, ...props }: PieChart
         {paths.map(({ path, color }, index) => (
           <Path key={index} path={path} color={color} />
         ))}
-        {centerSkiaView && centerSkiaView(radius, radius, innerRadius)}
+        {centerSkiaView && centerSkiaView(cx, cy, innerRadius)}
       </Canvas>
       {popupData && (
         <Popup
@@ -105,8 +104,8 @@ function PieChart({ popupStyle, centerSkiaView, centerView, ...props }: PieChart
             y: popupData.centerY,
             data: popupData.data,
           }}
-          totalWidth={radius * 2}
-          totalHeight={radius * 2}
+          totalWidth={width}
+          totalHeight={height}
           touchHandler={(x, y) => touchHandler(x - paddingLeft, y - paddingTop)}
           viewOffset={viewOffset}
           popupStyle={popupStyle}
