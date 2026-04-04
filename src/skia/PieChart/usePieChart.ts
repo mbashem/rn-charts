@@ -15,88 +15,161 @@ function xpoint(angle: number, radius: number, cx: number): number {
 	return cx - radius * Math.cos(degreesToRadians(angle));
 }
 
-function pdist(px: number, py: number, cx: number, cy: number) {
-	return Math.hypot(px - cx, py - cy);
+type Point = { x: number; y: number; };
+
+function euclideanDistance(dx: number, dy: number) {
+	return Math.hypot(dx, dy);
 }
 
-type Point = { x: number, y: number; };
+function getProportionPoint(
+	point: Point,
+	segment: number,
+	length: number,
+	dx: number,
+	dy: number
+): Point {
+	const factor = segment / length;
 
-// FIXME: Faulty logic to calculate the corner points for rounded slices, needs to be fixed
-function corners(x1: number, y1: number, x2: number, y2: number, r: number, cx: number, cy: number, nearest: boolean) {
-	const dx = x2 - x1;
-	const dy = y2 - y1;
-
-	const d = pdist(x1, y1, x2, y2);
-
-	// ❗ must satisfy
-	if (d > 2 * r) {
-		// no valid circle possible
-		throw new Error("Invalid points");
-	}
-
-	// midpoint
-	const mx = (x1 + x2) / 2;
-	const my = (y1 + y2) / 2;
-
-	// perpendicular unit vector
-	const ux = -dy / d;
-	const uy = dx / d;
-
-	// distance from midpoint to center
-	const h = Math.sqrt(r * r - (d / 2) * (d / 2));
-
-	// two possible centers
-	const cxA = mx + ux * h;
-	const cyA = my + uy * h;
-
-	const cxB = mx - ux * h;
-	const cyB = my - uy * h;
-
-	let nearestPoint: Point = { x: cxA, y: cyA };
-	let distantPoint: Point = { x: cxB, y: cyB };
-	if (pdist(nearestPoint.x, nearestPoint.y, cx, cy) > pdist(distantPoint.x, distantPoint.y, cx, cy)) {
-		let temp = nearestPoint;
-		nearestPoint = distantPoint;
-		distantPoint = temp;
-	}
-
-	if (nearest) return nearestPoint;
-
-	return distantPoint;
+	return {
+		x: point.x - dx * factor,
+		y: point.y - dy * factor,
+	};
 }
 
 function angle(cx: number, cy: number, x: number, y: number) {
 	return (Math.atan2(y - cy, x - cx) * (180 / Math.PI) + 360) % 360;
 }
 
-function arcFromCenter(
+// https://stackoverflow.com/a/24780108/13509919
+function drawRoundedCorner(
 	path: SkPath,
-	cx: number,
-	cy: number,
-	r: number,
-	startX: number,
-	startY: number,
-	endX: number,
-	endY: number,
-	sweepAngle: number = 90,
-	isCCW: boolean = false
+	angularPoint: Point,
+	p1: Point,
+	p2: Point,
+	radius: number
 ) {
-	let startAngle = angle(cx, cy, startX, startY);
-	let endAngle = angle(cx, cy, endX, endY);
-	if (isCCW) {
-		[startAngle, endAngle] = [endAngle, startAngle];
+	// Vector 1
+	const dx1 = angularPoint.x - p1.x;
+	const dy1 = angularPoint.y - p1.y;
+
+	// Vector 2
+	const dx2 = angularPoint.x - p2.x;
+	const dy2 = angularPoint.y - p2.y;
+
+	// Angle / 2
+	let angleHalf =
+		(Math.atan2(dy1, dx1) - Math.atan2(dy2, dx2)) / 2;
+
+	const tan = Math.abs(Math.tan(angleHalf));
+	if (tan === 0) return;
+
+	let segment = radius / tan;
+
+	// Lengths
+	const length1 = euclideanDistance(dx1, dy1);
+	const length2 = euclideanDistance(dx2, dy2);
+
+	const length = Math.min(length1, length2);
+
+	// Clamp
+	if (segment > length) {
+		segment = length;
+		radius = length * tan;
 	}
 
-	let angleDiff = (endAngle - startAngle + 360) % 360;
-	if (angleDiff !== sweepAngle) {
-		console.warn(`Expected sweep angle of ${sweepAngle} but got ${endAngle - startAngle}, startAngle: ${startAngle}, endAngle: ${endAngle}`);
-	}
-
-	path.addArc(
-		rect(cx - r, cy - r, r * 2, r * 2),
-		startAngle,
-		angleDiff
+	// Trimmed points
+	const p1Cross = getProportionPoint(
+		angularPoint,
+		segment,
+		length1,
+		dx1,
+		dy1
 	);
+
+	const p2Cross = getProportionPoint(
+		angularPoint,
+		segment,
+		length2,
+		dx2,
+		dy2
+	);
+
+	// Circle center
+	const dx = angularPoint.x * 2 - p1Cross.x - p2Cross.x;
+	const dy = angularPoint.y * 2 - p1Cross.y - p2Cross.y;
+
+	const L = euclideanDistance(dx, dy);
+	const d = Math.hypot(segment, radius);
+
+	const circlePoint = getProportionPoint(
+		angularPoint,
+		d,
+		L,
+		dx,
+		dy
+	);
+
+	// Angles (degrees for Skia)
+	let startAngle = angle(
+		circlePoint.x,
+		circlePoint.y,
+		p1Cross.x,
+		p1Cross.y
+	);
+
+	let endAngle = angle(
+		circlePoint.x,
+		circlePoint.y,
+		p2Cross.x,
+		p2Cross.y
+	);
+
+	let sweepAngle = endAngle - startAngle;
+
+	// Normalize
+	if (sweepAngle < 0) {
+		const temp = startAngle;
+		startAngle = endAngle;
+		sweepAngle = temp - endAngle;
+	}
+
+	if (sweepAngle > 180) {
+		sweepAngle = 180 - sweepAngle;
+	}
+
+	path.moveTo(p1Cross.x, p1Cross.y);
+
+	// arc
+	path.addArc(
+		rect(
+			circlePoint.x - radius,
+			circlePoint.y - radius,
+			radius * 2,
+			radius * 2
+		),
+		startAngle,
+		sweepAngle
+	);
+	path.lineTo(p1Cross.x, p1Cross.y);
+	path.close();
+
+	drawLines(path, [
+		{ x: p1.x, y: p1.y },
+		{ x: p1Cross.x, y: p1Cross.y },
+		{ x: p2Cross.x, y: p2Cross.y },
+		{ x: p2.x, y: p2.y },
+		{ x: p1.x, y: p1.y },
+	]);
+}
+
+function drawLines(path: SkPath, points: Point[]) {
+	if (points.length === 0) return;
+
+	path.moveTo(points[0]!.x, points[0]!.y);
+	for (let i = 1; i < points.length; i++) {
+		path.lineTo(points[i]!.x, points[i]!.y);
+	}
+	path.close();
 }
 
 function getCircularPoints(
@@ -114,6 +187,7 @@ function getCircularPoints(
 	return [x1, y1, x2, y2];
 }
 
+// FIXME: Doesn't work innerradius is set to 0, need to investigate why. If it is set to a very small number, it works fine. COPILOT: This is a known issue in Skia when the path has self-intersection.
 export function usePieChart({
 	slices,
 	style,
@@ -133,9 +207,9 @@ export function usePieChart({
 
 	const { paths, total } = useMemo(() => {
 		const total = slices.reduce((sum, slice) => sum + slice.value, 0);
-		let startAngle = 0;
+		let startAngle = style.startAngle ?? 0;
 
-		const paths = slices.map(({ value, color, radius: roundRadius = 0 }, index) => {
+		const paths = slices.slice(0, 4).map(({ value, color, radius: roundRadius = 0 }, index) => {
 			const sweepAngleTobeAdded = (value / total) * 360;
 			let currentStartAngle = startAngle;
 			let sweepAngle = sweepAngleTobeAdded;
@@ -161,14 +235,13 @@ export function usePieChart({
 				cy
 			);
 
-			// FIXME: Probable corner point. Need to find accurate way to calulate corner for rounding
-			// let [cx1, cy1, cx2, cy2] = getCircularPoints(
-			// 	currentStartAngle,
-			// 	radius,
-			// 	sweepAngle,
-			// 	cx,
-			// 	cy
-			// );
+			let [cx1, cy1, cx2, cy2] = getCircularPoints(
+				currentStartAngle,
+				radius,
+				sweepAngle,
+				cx,
+				cy
+			);
 
 			let [rx1, ry1, rx2, ry2] = getCircularPoints(
 				currentStartAngle,
@@ -187,14 +260,13 @@ export function usePieChart({
 				cy
 			);
 
-			// FIXME: Probable corner point. Need to find accurate way to calulate corner for rounding
-			// let [cix1, ciy1, cix2, ciy2] = getCircularPoints(
-			// 	currentStartAngle,
-			// 	innerRadius,
-			// 	sweepAngle,
-			// 	cx,
-			// 	cy
-			// );
+			let [cix1, ciy1, cix2, ciy2] = getCircularPoints(
+				currentStartAngle,
+				innerRadius,
+				sweepAngle,
+				cx,
+				cy
+			);
 			let [rix1, riy1, rix2, riy2] = getCircularPoints(
 				currentStartAngle,
 				innerRadius + roundRadius,
@@ -204,17 +276,17 @@ export function usePieChart({
 			);
 
 			let path = Skia.Path.Make();
+			drawRoundedCorner(path, { x: cx2, y: cy2 }, { x: x2, y: y2 }, { x: rx2, y: ry2 }, roundRadius);
+			drawRoundedCorner(path, { x: cix2, y: ciy2 }, { x: rix2, y: riy2 }, { x: ix2, y: iy2 }, roundRadius);
+			drawLines(path, [
+				{ x: x2, y: y2 },
+				{ x: rx2, y: ry2 },
+				{ x: rix2, y: riy2 },
+				{ x: ix2, y: iy2 },
+				{ x: x2, y: y2 },
+			]);
 
-			const cornerPoint1 = corners(x2, y2, rx2, ry2, roundRadius, cx, cy, true);
-
-			arcFromCenter(path, cornerPoint1.x, cornerPoint1.y, roundRadius, x2, y2, rx2, ry2);
-
-			path.lineTo(rix2, riy2);
-
-			const cornerPoint2 = corners(rix2, riy2, ix2, iy2, roundRadius, cx, cy, false);
-			arcFromCenter(path, cornerPoint2.x, cornerPoint2.y, roundRadius, rix2, riy2, ix2, iy2);
-			path.lineTo(x2, y2);
-
+			path.moveTo(x1, y1);
 			path.addArc(
 				rect(
 					cx - radius,
@@ -239,17 +311,18 @@ export function usePieChart({
 				-boundaryCircleSweepAngle
 			);
 			path.lineTo(x1, y1);
-
-			const cornerPoint3 = corners(ix1, iy1, rix1, riy1, roundRadius, cx, cy, false);
-			arcFromCenter(path, cornerPoint3.x, cornerPoint3.y, roundRadius, ix1, iy1, rix1, riy1);
-
-			path.lineTo(rx1, ry1);
-
-			const cornerPoint4 = corners(rx1, ry1, x1, y1, roundRadius, cx, cy, true);
-			arcFromCenter(path, cornerPoint4.x, cornerPoint4.y, roundRadius, rx1, ry1, x1, y1);
-			path.lineTo(ix1, iy1);
-
 			path.close();
+
+			drawRoundedCorner(path, { x: cix1, y: ciy1 }, { x: ix1, y: iy1 }, { x: rix1, y: riy1 }, roundRadius);
+			drawRoundedCorner(path, { x: cx1, y: cy1 }, { x: rx1, y: ry1 }, { x: x1, y: y1 }, roundRadius);
+			drawLines(path, [
+				{ x: ix1, y: iy1 },
+				{ x: rix1, y: riy1 },
+				{ x: rx1, y: ry1 },
+				{ x: x1, y: y1 },
+				{ x: ix1, y: iy1 },
+			]);
+
 			return { path, color: color ?? getRandomRGBColor() };
 		});
 		return { paths, total };
@@ -259,7 +332,8 @@ export function usePieChart({
 		innerRadius,
 		interSliceGap,
 		cx,
-		cy
+		cy,
+		style.startAngle
 	]);
 
 	const touchHandler = (locationX: number, locationY: number) => {

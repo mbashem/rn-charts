@@ -28,6 +28,7 @@ export type PieChartProps = {
 };
 
 export interface PieChartStyles extends CommonStyle {
+  startAngle?: number;
   radius?: number;
   innerRadius?: number;
   innerColor?: string;
