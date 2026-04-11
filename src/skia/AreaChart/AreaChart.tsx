@@ -132,7 +132,7 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
           }}
           onLayout={(event) => setHorizontalLabelHeight(event.nativeEvent.layout.height)}
         >
-          {label => xLabelView(label)}
+          {label => xLabelView(label.toString())}
         </HorizontalLabelView>
       }
       {touchLine && (
