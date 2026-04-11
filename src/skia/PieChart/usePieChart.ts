@@ -187,7 +187,9 @@ function getCircularPoints(
 	return [x1, y1, x2, y2];
 }
 
-// FIXME: Doesn't work innerradius is set to 0, need to investigate why. If it is set to a very small number, it works fine. COPILOT: This is a known issue in Skia when the path has self-intersection.
+// FIXME: Doesn't work innerradius is set to 0, need to investigate why. If it is set to a very small number, it works fine. COPILOT: This is a known issue in Skia when the path has self-intersection. Issue also occurs when rounding is set and innerRadius is small.
+// QUICKFIX: If innerRadius is 0, we can set it to a very small number like 0.001 to avoid the issue.
+// TODO: Verify the rounding of corners throughly
 export function usePieChart({
 	slices,
 	style,
@@ -200,7 +202,7 @@ export function usePieChart({
 	const diameter = radius * 2;
 	const width = diameter + 30;
 	const height = width;
-	const innerRadius = style.innerRadius ?? 100;
+	const innerRadius = Math.max(0.0001, style.innerRadius ?? 100);
 	const interSliceGap = style.interSliceGap ?? 20;
 	const cx = width / 2;
 	const cy = height / 2;
@@ -209,23 +211,31 @@ export function usePieChart({
 		const total = slices.reduce((sum, slice) => sum + slice.value, 0);
 		let startAngle = style.startAngle ?? 0;
 
-		const paths = slices.slice(0, 4).map(({ value, color, radius: roundRadius = 0 }, index) => {
+		const paths = slices.map(({ value, color, radius: givenRoundRadius = 0 }, index) => {
 			const sweepAngleTobeAdded = (value / total) * 360;
 			let currentStartAngle = startAngle;
 			let sweepAngle = sweepAngleTobeAdded;
 			startAngle += sweepAngleTobeAdded;
 
 			const outerCircleLength = 2 * Math.PI * radius;
+			const innerCircleLength = 2 * Math.PI * innerRadius;
+			const roundRadius = Math.min(givenRoundRadius, (radius - innerRadius) / 2, innerCircleLength / 2);
 
 			let angleReductionForGap = !interSliceGap ? 0 : (interSliceGap / outerCircleLength) * 360;
 			let angleReductionForRounding = (roundRadius / outerCircleLength) * 360 * 2;
+			let angleReductionForInnerCircle = (roundRadius / innerCircleLength) * 360 * 2;
 
 			currentStartAngle += angleReductionForGap / 2;
 			sweepAngle -= angleReductionForGap;
 
+			let innerCircleStartAngle = currentStartAngle;
+			let innerCircleSweepAngle = sweepAngle;
+
 			const boundaryCircleStartingAngle = currentStartAngle + angleReductionForRounding / 2;
 			const boundaryCircleSweepAngle = sweepAngle - angleReductionForRounding;
 
+			const innerCircleBoundaryStartingAngle = innerCircleStartAngle + angleReductionForInnerCircle / 2;
+			const innerCircleBoundarySweepAngle = innerCircleSweepAngle - angleReductionForInnerCircle;
 			// Outer Circle
 			let [x1, y1, x2, y2] = getCircularPoints(
 				boundaryCircleStartingAngle,
@@ -253,24 +263,24 @@ export function usePieChart({
 
 			// Inner circle
 			let [ix1, iy1, ix2, iy2] = getCircularPoints(
-				boundaryCircleStartingAngle,
+				innerCircleBoundaryStartingAngle,
 				innerRadius,
-				boundaryCircleSweepAngle,
+				innerCircleBoundarySweepAngle,
 				cx,
 				cy
 			);
 
 			let [cix1, ciy1, cix2, ciy2] = getCircularPoints(
-				currentStartAngle,
+				innerCircleStartAngle,
 				innerRadius,
-				sweepAngle,
+				innerCircleSweepAngle,
 				cx,
 				cy
 			);
 			let [rix1, riy1, rix2, riy2] = getCircularPoints(
-				currentStartAngle,
+				innerCircleStartAngle,
 				innerRadius + roundRadius,
-				sweepAngle,
+				innerCircleSweepAngle,
 				cx,
 				cy
 			);
@@ -307,8 +317,8 @@ export function usePieChart({
 					innerRadius * 2,
 					innerRadius * 2
 				),
-				boundaryCircleStartingAngle + 180 + boundaryCircleSweepAngle,
-				-boundaryCircleSweepAngle
+				innerCircleBoundaryStartingAngle + 180 + innerCircleBoundarySweepAngle,
+				-innerCircleBoundarySweepAngle
 			);
 			path.lineTo(x1, y1);
 			path.close();
@@ -351,8 +361,6 @@ export function usePieChart({
 
 			let lastAngle = (slice.value / total) * 360;
 			if (path.contains(locationX, locationY)) {
-				const label = slice.label || 'Slice';
-
 				const outerX = xpoint(angles + lastAngle / 2, radius, cx);
 				const innerX = xpoint(angles + lastAngle / 2, innerRadius, cx);
 
