@@ -23,6 +23,7 @@ export interface SemiCircleProgressProps {
   progress: number;
 }
 
+// experimental component for progress bars, will be updated later
 export default function SemiCircleProgress({
   progress,
   style,
@@ -54,7 +55,7 @@ export default function SemiCircleProgress({
               start={{ x: 0, y: 0 }}
               end={{ x: width, y: 0 }}
               colors={style.backgroundColors}
-							positions={style.backgroundColorsPositions}
+              positions={style.backgroundColorsPositions}
             />
           )}
         </RoundedRect>

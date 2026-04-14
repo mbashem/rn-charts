@@ -71,7 +71,7 @@ function VerticalLabelView({
 				{labelPercentages.map((percentage, index) => {
 					return <View
 						key={percentage}
-						style={{ position: "absolute", top: (1 - percentage) * height, backgroundColor: "purple" }}
+						style={{ position: "absolute", top: (1 - percentage) * height }}
 						onLayout={(event) => {
 							let width = event.nativeEvent.layout.width + strokeWidth;
 							if (verticalLabelStyle.width !== undefined)

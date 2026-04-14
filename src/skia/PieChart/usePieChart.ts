@@ -187,7 +187,7 @@ function getCircularPoints(
 	return [x1, y1, x2, y2];
 }
 
-// FIXME: Doesn't work innerradius is set to 0, need to investigate why. If it is set to a very small number, it works fine. COPILOT: This is a known issue in Skia when the path has self-intersection. Issue also occurs when rounding is set and innerRadius is small.
+// FIXME: Doesn't work when innerradius is set to 0, need to investigate why. If it is set to a very small number, it works fine. COPILOT: This is a known issue in Skia when the path has self-intersection. Issue also occurs when rounding is set and innerRadius is small.
 // QUICKFIX: If innerRadius is 0, we can set it to a very small number like 0.001 to avoid the issue.
 // TODO: Verify the rounding of corners throughly
 export function usePieChart({

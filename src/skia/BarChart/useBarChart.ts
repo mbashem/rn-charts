@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { rect, type SkHostRect } from "@shopify/react-native-skia";
-import { arrayFrom, isDefined } from "../../util/util";
+import { isDefined } from "../../util/util";
 import type { StackValue, BarChartProps } from "./BarChart";
 import { useWindowDimensions } from "react-native";
 import { getPaddings } from "../common";
@@ -50,7 +50,6 @@ export default function useBarChart(
 		return { maxValueCalculated, minValueCalculated };
 	}, [data, maxValue]);
 
-	const steps = useMemo(() => arrayFrom(1, 0.2), []);
 	const [tooltip, setTooltip] = useState<{ centerX: number, centerY: number, rect: SkHostRect, data: StackValue, xLabel?: string; } | undefined>(undefined);
 	const [startX, setStartX] = useState<number>(0);
 
@@ -93,9 +92,10 @@ export default function useBarChart(
 				const x = initialSpacing + (xIndex + startArrayIndex) * (chartBarWidth + chartBarSpacing);
 				return {
 					bars: bar.values.map((item, yIndex) => {
+						const range = maxValueCalculated - minValueCalculated;
 						const barHeight =
-							((item.value - minValueCalculated) /
-								Math.max(maxValueCalculated - minValueCalculated, 1)) *
+							((item.value - (range === 0 ? 0 : minValueCalculated)) /
+								Math.max(range, 1)) *
 							chartHeight;
 
 						const y =
@@ -193,7 +193,6 @@ export default function useBarChart(
 		maxValueCalculated,
 		minValueCalculated,
 		canvasWidth,
-		steps,
 		scrollAreaWidth,
 		chartHeight,
 		paddingTop,

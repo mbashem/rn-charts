@@ -25,6 +25,7 @@ export interface LinearProgressProps {
   progress: number; // value between 0 and 1
 }
 
+// experimental component for progress bars, will be updated later
 export default function LinearProgress({
   progress,
   style,

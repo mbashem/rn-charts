@@ -11,6 +11,7 @@ export * from "./skia/PieChart/PieChart";
 export { default as AreaChart } from "./skia/AreaChart/AreaChart";
 export * from "./skia/AreaChart/AreaChart";
 
+// WILL be added later currently in experimental stage
 // export * from "./skia/Progress/LinearProgress";
 
 export { default as RadarChart } from "./skia/RadarChart/RadarChart";
