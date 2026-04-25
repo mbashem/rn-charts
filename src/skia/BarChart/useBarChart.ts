@@ -76,7 +76,7 @@ export default function useBarChart(
 	const endSpacing = style?.lastBarTrailingSpacing ?? chartBarSpacing;
 
 	const scrollAreaWidth = initialSpacing + data.length * chartBarWidth + (Math.max(0, data.length - 1) * chartBarSpacing) + endSpacing;
-	const canvasWidth = Math.min(scrollAreaWidth, totalWidth - verticalLabelWidth - paddingRight - paddingLeft);
+	const canvasWidth = Math.min(Math.max(scrollAreaWidth, totalWidth), totalWidth - verticalLabelWidth - paddingRight - paddingLeft);
 	const overscanArea = totalWidth * (overscanRatio ?? 0.5);
 	const leftBoundary = startX - overscanArea;
 

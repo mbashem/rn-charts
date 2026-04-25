@@ -75,7 +75,6 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
     totalHeight,
     totalWidth,
     horizontalStrokeWidth,
-    startX,
     offset
   } = useBarChart(props);
 
