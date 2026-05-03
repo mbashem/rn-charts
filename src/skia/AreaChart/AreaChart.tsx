@@ -18,10 +18,8 @@ export interface AreaData {
 export interface AreaChartStyle extends CommonStyle, VerticalLabelStyle {
   width: number;
   height: number;
-  showPoints?: boolean;
   pointRadius?: number;
   lightenPointsBy?: number;
-  strokeWidth?: number;
   verticalLabelStyle?: VerticalLabelStyle;
   horizontalLabelStyle?: HorizontalLabelStyle;
 }
@@ -45,10 +43,10 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
     canvasHeight,
     areaCanvasHeight,
     verticalLabelWidth,
-    verticalLabelStrokeWidth,
     yLabels,
     setVerticalLabelWidth,
     setHorizontalLabelHeight,
+    horizontalStrokeWidth,
     chartWidth,
     paths,
     xLabelsData,
@@ -56,6 +54,7 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
     paddingTop,
     paddingHorizontal,
     touchLine,
+    pointRadius,
     touchHandler,
   } = useAreaChart(props);
   const { style, popupStyle } = props;
@@ -76,7 +75,7 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
         });
       }}
     >
-      <View style={{ flexDirection: "row" }}>
+      <View style={{ flexDirection: "row", height: areaCanvasHeight }}>
         {yLabelView &&
           <VerticalLabelView
             onLayout={(event) => {
@@ -84,7 +83,7 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
             }}
             labelPercentages={yLabels}
             styles={{
-              height: areaCanvasHeight,
+              height: areaCanvasHeight + horizontalStrokeWidth,
               verticalLabelStyle: props.style?.verticalLabelStyle,
             }}
           >
@@ -105,14 +104,14 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
             return (
               <Group key={index}>
                 <Path path={path} color={color} />
-                {style?.showPoints &&
+                {pointRadius > 0 &&
                   color &&
                   points.map((points) => (
                     <Circle
                       key={`${points.x}-${points.y}`}
                       cx={points.x}
                       cy={points.y}
-                      r={style?.pointRadius ?? 3}
+                      r={pointRadius}
                       color={lighten(color, style?.lightenPointsBy ?? 0.3)}
                     />
                   ))}
@@ -129,6 +128,7 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
           style={{
             left: verticalLabelWidth,
             width: chartWidth,
+            horizontalLabelStyle: props.style?.horizontalLabelStyle,
           }}
           onLayout={(event) => setHorizontalLabelHeight(event.nativeEvent.layout.height)}
         >

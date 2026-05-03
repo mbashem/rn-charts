@@ -8,6 +8,8 @@ export interface CommonStyle {
 	paddingEnd?: number;
 	paddingLeft?: number;
 	paddingRight?: number;
+	paddingHorizontal?: number;
+	paddingVertical?: number;
 	backgroundColor?: string;
 	disableRTL?: boolean;
 }
@@ -17,8 +19,8 @@ export function getPaddings(style?: CommonStyle) {
 	const paddingBottom = style?.paddingBottom ?? style?.padding ?? 0;
 	const isRTL = I18nManager.isRTL && !(style?.disableRTL ?? false)
 
-	const paddingLeft = style?.paddingLeft ?? (isRTL ? style?.paddingEnd : style?.paddingStart) ?? style?.padding ?? 0;
-	const paddingRight = style?.paddingRight ?? (isRTL ? style?.paddingStart : style?.paddingEnd) ?? style?.padding ?? 0;
+	const paddingLeft = style?.paddingHorizontal ?? style?.paddingLeft ?? (isRTL ? style?.paddingEnd : style?.paddingStart) ?? style?.padding ?? 0;
+	const paddingRight = style?.paddingVertical ?? style?.paddingRight ?? (isRTL ? style?.paddingStart : style?.paddingEnd) ?? style?.padding ?? 0;
 	const paddingHorizontal = paddingLeft + paddingRight;
 	const paddingVertical = paddingTop + paddingBottom;
 

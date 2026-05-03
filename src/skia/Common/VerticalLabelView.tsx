@@ -91,7 +91,7 @@ function VerticalLabelView({
 			</View>
 
 			{(labelSkiaView || strokeWidth > 0) &&
-				<Canvas style={{ position: "absolute", left: 0, width, height, }}>
+				<Canvas style={{ position: "absolute", left: 0, width: (maxWidth ?? width), height: height, }}>
 					{labelSkiaView && labelPercentages.map((percentage, index) => {
 						return <Group key={percentage}>{labelSkiaView(percentage, (1 - percentage) * height, index)}</Group>;
 					})}

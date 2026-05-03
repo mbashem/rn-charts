@@ -50,11 +50,13 @@ function useAreaChart({
 
 	const canvasHeight = height - paddingVertical;
 	const [verticalLabelWidth, setVerticalLabelWidth] = useState(style?.verticalLabelStyle?.width ?? 0);
-	const strokeWidth = style?.strokeWidth ?? 2
-	const verticalLabelStrokeWidth = style?.verticalLabelStyle?.strokeWidth ?? strokeWidth
+	const strokeWidth = style?.strokeWidth ?? 2;
+	const verticalLabelStrokeWidth = style?.verticalLabelStyle?.strokeWidth ?? strokeWidth;
 	const chartWidth = width - verticalLabelWidth - paddingHorizontal;
-	const [horizontalLabelHeight, setHorizontalLabelHeight] = useState(20)
+	const [horizontalLabelHeight, setHorizontalLabelHeight] = useState(20);
+	const horizontalStrokeWidth = style?.horizontalLabelStyle?.strokeWidth ?? 0;
 	const areaCanvasHeight = canvasHeight - horizontalLabelHeight;
+	const pointRadius = style?.pointRadius ?? 0;
 
 	const { maxValueCalculated, minValueCalculated } = useMemo(() => {
 		if (isDefined(maxValue) && isDefined(minValue)) {
@@ -88,16 +90,18 @@ function useAreaChart({
 			const points: Point[] = [];
 			const values: number[] = [];
 
+			let lastX = 0;
 			areaData.forEach((y, i) => {
 				const xPos = i * stepX;
 				const yPos = Math.max(0, areaCanvasHeight - ((y - minValueCalculated) / (maxValueCalculated - minValueCalculated)) * areaCanvasHeight);
 
-				points.push({x: xPos, y: yPos });
+				points.push({ x: xPos, y: yPos });
+				lastX = xPos;
 				values.push(y);
 				p.lineTo(xPos, yPos);
 			});
 
-			p.lineTo(chartWidth, areaCanvasHeight);
+			p.lineTo(lastX, areaCanvasHeight);
 			p.close();
 
 			pathData.push({
@@ -166,13 +170,15 @@ function useAreaChart({
 		yLabels,
 		verticalLabelWidth,
 		setVerticalLabelWidth,
+		horizontalStrokeWidth,
 		maxValue: maxValueCalculated,
 		minValue: minValueCalculated,
 		xLabelsData,
 		horizontalLabelHeight,
 		setHorizontalLabelHeight,
 		touchHandler,
-		touchLine
+		touchLine,
+		pointRadius
 	};
 }
 
