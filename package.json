@@ -56,7 +56,6 @@
   ],
   "scripts": {
     "example": "yarn workspace rn-charts-example",
-    "test": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "del-cli lib",
@@ -72,7 +71,6 @@
     "@react-native/babel-preset": "0.81.5",
     "@react-native/eslint-config": "^0.81.5",
     "@release-it/conventional-changelog": "^10.0.4",
-    "@types/jest": "^30.0.0",
     "@types/react": "^19.1.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "commitlint": "^20.4.0",
@@ -80,36 +78,33 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-ft-flow": "^3.0.11",
-    "eslint-plugin-jest": "^29.0.1",
     "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-native": "^5.0.0",
-    "jest": "^30.2.0",
     "prettier": "^3.6.2",
     "react-native-builder-bob": "^0.40.13",
     "release-it": "^19.2.2",
-    "typescript": "^5.8.3"
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@bashem/rn-popup": "file:../rn-popup",
+    "expo": "~56.0.4",
+    "react": "^19.1.0",
+    "react-native": ">=0.81.5 <1.0.0"
   },
   "peerDependencies": {
     "@shopify/react-native-skia": "^2.2.12",
     "react": "^19.1.0",
-    "react-native": "^0.81.5",
+    "react-native": ">=0.81.5 <1.0.0",
     "react-native-gesture-handler": "^2.28.0",
     "react-native-reanimated": "^4.1.1",
-    "react-native-worklets": "^0.5.1"
+    "react-native-worklets": ">=0.5.1 <1.0.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
   "packageManager": "yarn@3.6.1",
-  "jest": {
-    "preset": "react-native",
-    "modulePathIgnorePatterns": [
-      "<rootDir>/example/node_modules",
-      "<rootDir>/lib/"
-    ]
-  },
   "commitlint": {
     "extends": [
       "@commitlint/config-conventional"
@@ -164,6 +159,5 @@
     "languages": "js",
     "type": "library",
     "version": "0.52.0"
-  },
-  "dependencies": {}
+  }
 }

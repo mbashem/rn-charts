@@ -1,9 +1,13 @@
 import React from 'react';
-import { Modal, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
+import { RnPopupView } from '@bashem/rn-popup';
+
+let didWarnAboutMissingDimensions = false;
 
 export interface PopupStyle<T> {
   width?: number;
   height?: number;
+  passThrough?: boolean;
   renderPopup?: (data: T) => React.ReactNode;
 }
 
@@ -26,6 +30,30 @@ interface PopupProps<T> {
   };
 }
 
+interface PopupItem<T> {
+  data: T;
+  frame: PopupFrame;
+}
+
+interface PopupFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(value, max));
+}
+
+function asPopupArray<T>(popupData?: PopupData<T> | PopupData<T>[]) {
+  if (!popupData) {
+    return [];
+  }
+
+  return Array.isArray(popupData) ? popupData : [popupData];
+}
+
 export default function Popup<T>({
   popupData,
   totalWidth,
@@ -35,93 +63,89 @@ export default function Popup<T>({
   popupStyle,
   viewOffset,
 }: PopupProps<T>) {
+  const windowDimensions = useWindowDimensions();
+
+  if (!popupData || !popupStyle?.renderPopup) {
+    return null;
+  }
+
+  const popupWidth = popupStyle.width;
+  const popupHeight = popupStyle.height;
+  const renderPopup = popupStyle.renderPopup;
+
+  if (
+    typeof popupWidth !== 'number' ||
+    popupWidth <= 0 ||
+    typeof popupHeight !== 'number' ||
+    popupHeight <= 0
+  ) {
+    if (__DEV__ && !didWarnAboutMissingDimensions) {
+      didWarnAboutMissingDimensions = true;
+      console.warn(
+        'rn-charts popupStyle.width and popupStyle.height are required for native rn-popup windows.'
+      );
+    }
+
+    return null;
+  }
+
+  const popupItems: PopupItem<T>[] = asPopupArray(popupData).map((item) => ({
+    data: item.data,
+    frame: {
+      x: clamp(item.x, 0, totalWidth - popupWidth),
+      y: clamp(item.y, 0, totalHeight - popupHeight),
+      width: popupWidth,
+      height: popupHeight,
+    },
+  }));
+  const passThrough = popupStyle.passThrough ?? true;
+  const overlayWidth = Math.max(
+    windowDimensions.width,
+    viewOffset.x + totalWidth
+  );
+  const overlayHeight = Math.max(
+    windowDimensions.height,
+    viewOffset.y + totalHeight
+  );
+  const handleDismiss = () => {
+    if (onTouchOutside) {
+      onTouchOutside();
+      return;
+    }
+
+    touchHandler?.(-1, -1);
+  };
+  const handleOutsideTouch = () => {
+    handleDismiss();
+  };
+
   return (
-    <>
-      {popupData && popupStyle?.renderPopup && (
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={true}
-          onRequestClose={() => {
-            onTouchOutside?.();
-          }}
-          onTouchStart={(e) => {
-            console.log('modal touched ');
+    <RnPopupView
+      color="transparent"
+      onOutsideTouch={handleOutsideTouch}
+      passThrough={passThrough}
+      style={{
+        position: 'absolute',
+        left: -viewOffset.x,
+        top: -viewOffset.y,
+        width: overlayWidth,
+        height: overlayHeight,
+      }}
+    >
+      {popupItems.map(({ data, frame }, index) => (
+        <View
+          key={index}
+          style={{
+            position: 'absolute',
+            left: viewOffset.x + frame.x,
+            top: viewOffset.y + frame.y,
+            width: frame.width,
+            height: frame.height,
           }}
         >
-          <View
-            style={{
-              flex: 1,
-              width: '100%',
-              height: '100%',
-            }}
-            onTouchStart={(e) => {
-              const x = e.nativeEvent.pageX;
-              const y = e.nativeEvent.pageY;
-              touchHandler?.(x - viewOffset.x, y - viewOffset.y);
-            }}
-          >
-            {popupData && !Array.isArray(popupData) && (
-              <View
-                style={
-                  {
-                    position: 'absolute',
-                    left: Math.max(
-                      0,
-                      Math.min(popupData.x, totalWidth - (popupStyle?.width ?? 0)) +
-                      viewOffset.x
-                    ),
-                    top: Math.max(
-                      0,
-                      Math.min(
-                        popupData.y,
-                        totalHeight - (popupStyle?.height ?? 0)
-                      ) + viewOffset.y
-                    ),
-                    width: popupStyle.width,
-                    height: popupStyle.height
-                  }
-                }
-                onTouchStart={(e) => e.stopPropagation()}
-              >
-                {popupStyle?.renderPopup(popupData.data)}
-              </View>
-            )}
-
-            {popupData &&
-              Array.isArray(popupData) &&
-              popupData.map((popupItem, index) =>
-              (
-                <View
-                  key={index}
-                  style={
-                    {
-                      position: 'absolute',
-                      left: Math.max(
-                        0,
-                        Math.min(
-                          popupItem.x,
-                          totalWidth - (popupStyle?.width ?? 0)
-                        ) + viewOffset.x
-                      ),
-                      top: Math.max(
-                        0,
-                        Math.min(
-                          popupItem.y,
-                          totalHeight - (popupStyle?.height ?? 0)
-                        ) + viewOffset.y
-                      ),
-                    }
-                  }
-                  onTouchStart={(e) => e.stopPropagation()}
-                >
-                  {popupStyle?.renderPopup?.(popupItem.data)}
-                </View>
-              )
-              )}
-          </View>
-        </Modal>
-      )}
-    </>
+          {renderPopup(data)}
+        </View>
+      ))}
+    </RnPopupView>
   );
 }

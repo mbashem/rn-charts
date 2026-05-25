@@ -3,7 +3,7 @@ import { Canvas, Circle, Group, Path } from '@shopify/react-native-skia';
 import { type CommonStyle } from '../common';
 import { View } from 'react-native';
 import useAreaChart from './useAreaChart';
-import { useState } from 'react';
+import { type ReactElement, useState } from 'react';
 import { lighten } from '../../util/colors';
 import Popup, { type PopupStyle } from '../Popup';
 import VerticalLabelView, { type VerticalLabelStyle } from "../Common/VerticalLabelView";
@@ -30,8 +30,8 @@ export interface AreaChartProps {
   maxValue?: number;
   xLabels?: string[];
   yLabels: number[];
-  yLabelView?: (percentage: number, min: number, max: number) => JSX.Element;
-  xLabelView?: (label?: string) => JSX.Element;
+  yLabelView?: (percentage: number, min: number, max: number) => ReactElement;
+  xLabelView?: (label?: string) => ReactElement;
   style?: AreaChartStyle;
   popupStyle: PopupStyle<{ rowIndex: number; colIndex: number; value: number; }>;
 }
