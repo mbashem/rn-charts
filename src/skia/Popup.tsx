@@ -1,6 +1,6 @@
-import React from 'react';
-import { useWindowDimensions, View } from 'react-native';
-import { RnPopupView } from '@bashem/rn-popup';
+import { useWindowDimensions, View } from "react-native";
+import { Popup as NativePopup } from "@bashem/rn-popup";
+import type { ReactNode } from "react";
 
 let didWarnAboutMissingDimensions = false;
 
@@ -8,7 +8,7 @@ export interface PopupStyle<T> {
   width?: number;
   height?: number;
   passThrough?: boolean;
-  renderPopup?: (data: T) => React.ReactNode;
+  renderPopup?: (data: T) => ReactNode;
 }
 
 interface PopupData<T> {
@@ -54,6 +54,24 @@ function asPopupArray<T>(popupData?: PopupData<T> | PopupData<T>[]) {
   return Array.isArray(popupData) ? popupData : [popupData];
 }
 
+function getPopupBounds<T>(items: PopupItem<T>[]): PopupFrame {
+  const minX = Math.min(...items.map((item) => item.frame.x));
+  const minY = Math.min(...items.map((item) => item.frame.y));
+  const maxX = Math.max(
+    ...items.map((item) => item.frame.x + item.frame.width)
+  );
+  const maxY = Math.max(
+    ...items.map((item) => item.frame.y + item.frame.height)
+  );
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  };
+}
+
 export default function Popup<T>({
   popupData,
   totalWidth,
@@ -74,15 +92,15 @@ export default function Popup<T>({
   const renderPopup = popupStyle.renderPopup;
 
   if (
-    typeof popupWidth !== 'number' ||
+    typeof popupWidth !== "number" ||
     popupWidth <= 0 ||
-    typeof popupHeight !== 'number' ||
+    typeof popupHeight !== "number" ||
     popupHeight <= 0
   ) {
     if (__DEV__ && !didWarnAboutMissingDimensions) {
       didWarnAboutMissingDimensions = true;
       console.warn(
-        'rn-charts popupStyle.width and popupStyle.height are required for native rn-popup windows.'
+        "rn-charts popupStyle.width and popupStyle.height are required for native rn-popup windows."
       );
     }
 
@@ -98,7 +116,16 @@ export default function Popup<T>({
       height: popupHeight,
     },
   }));
+
+  if (popupItems.length === 0) {
+    return null;
+  }
+
+  const popupBounds = getPopupBounds(popupItems);
   const passThrough = popupStyle.passThrough ?? true;
+  const outsideTouchBehavior = passThrough
+    ? "dismiss-and-pass-through"
+    : "dismiss";
   const overlayWidth = Math.max(
     windowDimensions.width,
     viewOffset.x + totalWidth
@@ -120,32 +147,42 @@ export default function Popup<T>({
   };
 
   return (
-    <RnPopupView
-      color="transparent"
-      onOutsideTouch={handleOutsideTouch}
-      passThrough={passThrough}
+    <NativePopup
+      onOutsidePress={handleOutsideTouch}
+      outsideTouchBehavior={outsideTouchBehavior}
       style={{
-        position: 'absolute',
+        position: "absolute",
         left: -viewOffset.x,
         top: -viewOffset.y,
         width: overlayWidth,
         height: overlayHeight,
       }}
+      visible={true}
     >
-      {popupItems.map(({ data, frame }, index) => (
-        <View
-          key={index}
-          style={{
-            position: 'absolute',
-            left: viewOffset.x + frame.x,
-            top: viewOffset.y + frame.y,
-            width: frame.width,
-            height: frame.height,
-          }}
-        >
-          {renderPopup(data)}
-        </View>
-      ))}
-    </RnPopupView>
+      <View
+        style={{
+          position: "absolute",
+          left: viewOffset.x + popupBounds.x,
+          top: viewOffset.y + popupBounds.y,
+          width: popupBounds.width,
+          height: popupBounds.height,
+        }}
+      >
+        {popupItems.map(({ data, frame }, index) => (
+          <View
+            key={index}
+            style={{
+              position: "absolute",
+              left: frame.x - popupBounds.x,
+              top: frame.y - popupBounds.y,
+              width: frame.width,
+              height: frame.height,
+            }}
+          >
+            {renderPopup(data)}
+          </View>
+        ))}
+      </View>
+    </NativePopup>
   );
 }

@@ -1,19 +1,21 @@
-declare module '@bashem/rn-popup' {
-  import type * as React from 'react';
-  import type { NativeSyntheticEvent, ViewProps } from 'react-native';
+declare module "@bashem/rn-popup" {
+  import type * as React from "react";
+  import type { StyleProp, ViewStyle } from "react-native";
 
-  export interface OutsideTouchEvent {
-    pageX: number;
-    pageY: number;
+  export type OutsideTouchBehavior =
+    | "none"
+    | "dismiss"
+    | "pass-through"
+    | "dismiss-and-pass-through";
+
+  export interface PopupProps {
+    visible: boolean;
+    children: React.ReactNode;
+    outsideTouchBehavior?: OutsideTouchBehavior;
+    onOutsidePress?: () => void;
+    onDismiss?: () => void;
+    style?: StyleProp<ViewStyle>;
   }
 
-  export interface RnPopupViewProps extends ViewProps {
-    color?: string;
-    passThrough?: boolean;
-    onOutsideTouch?: (
-      event: NativeSyntheticEvent<OutsideTouchEvent>
-    ) => void;
-  }
-
-  export const RnPopupView: React.ComponentType<RnPopupViewProps>;
+  export const Popup: React.ComponentType<PopupProps>;
 }

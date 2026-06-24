@@ -56,6 +56,10 @@
   ],
   "scripts": {
     "example": "yarn workspace rn-charts-example",
+    "example:start": "npm --prefix example run start",
+    "example:android": "npm --prefix example run android",
+    "example:ios": "npm --prefix example run ios",
+    "example:web": "npm --prefix example run web",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "del-cli lib",
@@ -132,7 +136,7 @@
   },
   "prettier": {
     "quoteProps": "consistent",
-    "singleQuote": true,
+    "singleQuote": false,
     "tabWidth": 2,
     "trailingComma": "es5",
     "useTabs": false
