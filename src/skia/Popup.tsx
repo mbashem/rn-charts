@@ -7,7 +7,6 @@ let didWarnAboutMissingDimensions = false;
 export interface PopupStyle<T> {
   width?: number;
   height?: number;
-  passThrough?: boolean;
   renderPopup?: (data: T) => ReactNode;
 }
 
@@ -21,8 +20,7 @@ interface PopupProps<T> {
   popupData?: PopupData<T> | PopupData<T>[];
   totalWidth: number;
   totalHeight: number;
-  touchHandler?: (x: number, y: number) => void;
-  onTouchOutside?: () => void;
+  onTouchOutside: () => void;
   popupStyle?: PopupStyle<T>;
   viewOffset: {
     x: number;
@@ -76,7 +74,6 @@ export default function Popup<T>({
   popupData,
   totalWidth,
   totalHeight,
-  touchHandler,
   onTouchOutside,
   popupStyle,
   viewOffset,
@@ -122,10 +119,6 @@ export default function Popup<T>({
   }
 
   const popupBounds = getPopupBounds(popupItems);
-  const passThrough = popupStyle.passThrough ?? true;
-  const outsideTouchBehavior = passThrough
-    ? "dismiss-and-pass-through"
-    : "dismiss";
   const overlayWidth = Math.max(
     windowDimensions.width,
     viewOffset.x + totalWidth
@@ -134,22 +127,14 @@ export default function Popup<T>({
     windowDimensions.height,
     viewOffset.y + totalHeight
   );
-  const handleDismiss = () => {
-    if (onTouchOutside) {
-      onTouchOutside();
-      return;
-    }
-
-    touchHandler?.(-1, -1);
-  };
   const handleOutsideTouch = () => {
-    handleDismiss();
+    onTouchOutside();
   };
 
   return (
     <NativePopup
       onOutsidePress={handleOutsideTouch}
-      outsideTouchBehavior={outsideTouchBehavior}
+      outsideTouchBehavior="pass-through"
       style={{
         position: "absolute",
         left: -viewOffset.x,

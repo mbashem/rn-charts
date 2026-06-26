@@ -50,12 +50,11 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
     chartWidth,
     paths,
     xLabelsData,
-    paddingLeft,
-    paddingTop,
     paddingHorizontal,
     touchLine,
     pointRadius,
     touchHandler,
+    dismissPopup,
   } = useAreaChart(props);
   const { style, popupStyle } = props;
 
@@ -148,10 +147,7 @@ function AreaChart({ xLabelView, yLabelView, ...props }: AreaChartProps) {
           }))}
           totalWidth={chartWidth + verticalLabelWidth + paddingHorizontal}
           totalHeight={canvasHeight}
-          touchHandler={(x, y) => {
-            console.log('Popup touchHandler', x, y);
-            touchHandler(x - verticalLabelWidth - paddingLeft, y - paddingTop);
-          }}
+          onTouchOutside={dismissPopup}
           viewOffset={viewOffset}
           popupStyle={popupStyle}
         />

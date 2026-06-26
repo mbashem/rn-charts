@@ -157,6 +157,10 @@ function useAreaChart({
 		});
 	};
 
+	const dismissPopup = () => {
+		setTouchLine(undefined);
+	};
+
 	return {
 		paths,
 		chartWidth,
@@ -178,6 +182,7 @@ function useAreaChart({
 		setHorizontalLabelHeight,
 		touchHandler,
 		touchLine,
+		dismissPopup,
 		pointRadius
 	};
 }

@@ -36,7 +36,7 @@ export interface PieChartStyles extends CommonStyle {
 }
 
 function PieChart({ popupStyle, centerSkiaView, centerView, ...props }: PieChartProps) {
-  const { radius, width, height, cx, cy, innerRadius, paths, popupData, touchHandler } =
+  const { radius, width, height, cx, cy, innerRadius, paths, popupData, touchHandler, dismissPopup } =
     usePieChart(props);
 
   const { style } = props;
@@ -107,7 +107,7 @@ function PieChart({ popupStyle, centerSkiaView, centerView, ...props }: PieChart
           }}
           totalWidth={width}
           totalHeight={height}
-          touchHandler={(x, y) => touchHandler(x - paddingLeft, y - paddingTop)}
+          onTouchOutside={dismissPopup}
           viewOffset={viewOffset}
           popupStyle={popupStyle}
         />

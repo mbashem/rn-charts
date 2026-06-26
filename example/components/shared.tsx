@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 interface ChartExampleSectionProps {
   title: string;
@@ -40,63 +40,63 @@ export const popupText = (title: string, value: string | number) => (
 export const exampleStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
   },
   content: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 18,
     paddingBottom: 32,
     paddingHorizontal: 16,
     paddingTop: 56,
   },
   title: {
-    alignSelf: 'flex-start',
-    color: '#0F172A',
+    alignSelf: "flex-start",
+    color: "#0F172A",
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   section: {
-    width: '100%',
-    alignItems: 'center',
-    borderColor: '#E2E8F0',
+    width: "100%",
+    alignItems: "center",
+    borderColor: "#E2E8F0",
     borderRadius: 8,
     borderWidth: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 12,
     paddingVertical: 16,
   },
   sectionTitle: {
-    alignSelf: 'flex-start',
-    color: '#1E293B',
+    alignSelf: "flex-start",
+    color: "#1E293B",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 12,
   },
   axisLabel: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   popup: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    borderColor: '#CBD5E1',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    borderColor: "#CBD5E1",
     borderRadius: 8,
     borderWidth: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 10,
   },
   popupTitle: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   popupValue: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: "800",
     marginTop: 2,
   },
   barSelection: {
@@ -106,22 +106,22 @@ export const exampleStyles = StyleSheet.create({
   heatSelection: {
     width: 24,
     height: 24,
-    borderColor: '#0F172A',
+    borderColor: "#0F172A",
     borderRadius: 4,
     borderWidth: 2,
   },
   pieCenter: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   pieCenterValue: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   pieCenterLabel: {
-    color: '#64748B',
+    color: "#64748B",
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

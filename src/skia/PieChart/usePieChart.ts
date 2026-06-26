@@ -391,6 +391,11 @@ export function usePieChart({
 		}
 	};
 
+	const dismissPopup = () => {
+		onSliceTouch?.(undefined);
+		setPopupData(undefined);
+	};
+
 	return {
 		paths,
 		height,
@@ -400,6 +405,7 @@ export function usePieChart({
 		radius,
 		popupData,
 		touchHandler,
+		dismissPopup,
 		cx,
 		cy
 	};

@@ -69,6 +69,7 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
     setVerticalLabelWidth,
     chartHeight,
     tooltip,
+    setTooltip,
     setBottomLabelHeight,
     onScroll,
     touchHandler,
@@ -79,6 +80,7 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
   } = useBarChart(props);
 
   const panGestureRef = useRef(Gesture.Pan());
+  const lastChartTouchStartAt = useRef(0);
 
   const panGesture = Gesture.Pan()
     .onChange((event) => {
@@ -91,6 +93,20 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
     .onStart((event) => {
       touchHandler(event.x, event.y);
     });
+
+  const markChartTouchStart = () => {
+    lastChartTouchStartAt.current = Date.now();
+  };
+
+  const handlePopupTouchOutside = () => {
+    const outsideTouchAt = Date.now();
+
+    setTimeout(() => {
+      if (lastChartTouchStartAt.current < outsideTouchAt - 120) {
+        setTooltip(undefined);
+      }
+    }, 120);
+  };
 
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const canvasGestures = Gesture.Exclusive(panGesture, tapGesture);
@@ -143,7 +159,12 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
               {percentage => yLabelView?.(percentage, minValueCalculated, maxValueCalculated)}
             </VerticalLabelView>)
           }
-          <ScrollView horizontal={true} simultaneousHandlers={panGestureRef} style={{ padding: 0 }}>
+          <ScrollView
+            horizontal={true}
+            onTouchStart={markChartTouchStart}
+            simultaneousHandlers={panGestureRef}
+            style={{ padding: 0 }}
+          >
             <GestureDetector gesture={canvasGestures}>
               <Canvas
                 style={{
@@ -241,10 +262,7 @@ function BarChart({ xLabelView, yLabelView, yLabelSkiaView, barSkiaView, onSelec
               popupStyle={props.popupStyle}
               totalWidth={totalWidth}
               totalHeight={totalHeight}
-              touchHandler={(x, y) => {
-                touchHandler(x - verticalLabelWidth - paddingLeft, y);
-              }}
-              onTouchOutside={() => touchHandler(-1, -1)}
+              onTouchOutside={handlePopupTouchOutside}
               viewOffset={viewOffset}
             />
           </>

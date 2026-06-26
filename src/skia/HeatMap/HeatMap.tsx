@@ -203,10 +203,6 @@ function HeatMap({ yLabelView, yLabelSkiaView, xLabelView, xLabelSkiaView, cellS
           popupData={{ x: popupData.x + verticalLabelWidth + paddingLeft, y: popupData.y + (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight) + paddingTop, data: popupData.data }}
           totalWidth={totalWidth}
           totalHeight={totalHeight}
-          touchHandler={(x, y) => {
-            console.log(x, y)
-            touchHandler(x - verticalLabelWidth - paddingLeft, y - (props.style?.horizontalLabelStyle?.viewPosition === "bottom" ? 0 : horizontalLabelHeight) - paddingTop);
-          }}
           onTouchOutside={onTouchOutside}
           popupStyle={props.popupStyle}
           viewOffset={viewOffset}

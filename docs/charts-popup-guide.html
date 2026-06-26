@@ -1,0 +1,1496 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@bashem/rn-charts Guide</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7fa;
+        --panel: #ffffff;
+        --panel-soft: #eef4f8;
+        --text: #17202a;
+        --muted: #5d6978;
+        --line: #d7dee8;
+        --line-strong: #aab6c5;
+        --accent: #0e6d5f;
+        --accent-soft: #dff1ee;
+        --blue: #2858a8;
+        --blue-soft: #e6eeff;
+        --green: #18734f;
+        --green-soft: #e3f3eb;
+        --orange: #a45b0b;
+        --orange-soft: #fff0d8;
+        --bad: #a33a3a;
+        --bad-soft: #ffe5e5;
+        --code-bg: #101820;
+        --code-text: #e6edf3;
+        --shadow: 0 14px 42px rgba(23, 32, 42, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 286px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        border-right: 1px solid var(--line);
+        background: #fbfcfe;
+        padding: 24px 18px;
+      }
+
+      .brand {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 22px;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border: 2px solid var(--accent);
+        border-radius: 8px;
+        background:
+          linear-gradient(90deg, transparent 16%, rgba(14, 109, 95, 0.18) 17%, transparent 18%),
+          linear-gradient(90deg, transparent 44%, rgba(14, 109, 95, 0.2) 45%, transparent 46%),
+          linear-gradient(90deg, transparent 72%, rgba(14, 109, 95, 0.16) 73%, transparent 74%),
+          var(--accent-soft);
+        color: var(--accent);
+        font-weight: 900;
+      }
+
+      .brand-title {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .brand-subtitle {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .search {
+        width: 100%;
+        height: 38px;
+        margin-bottom: 18px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--text);
+        padding: 0 11px;
+      }
+
+      .nav-group {
+        margin: 18px 0;
+      }
+
+      .nav-heading {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .nav-link {
+        display: block;
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 14px;
+        padding: 7px 9px;
+      }
+
+      .nav-link.active,
+      .nav-link:hover {
+        background: var(--accent-soft);
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .main {
+        min-width: 0;
+        padding: 28px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+        gap: 22px;
+        align-items: stretch;
+        margin-bottom: 22px;
+      }
+
+      .hero-copy,
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-copy {
+        padding: 30px;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        max-width: 760px;
+        font-size: 40px;
+      }
+
+      h2 {
+        margin-bottom: 14px;
+        font-size: 26px;
+      }
+
+      h3 {
+        margin-bottom: 9px;
+        font-size: 18px;
+      }
+
+      p {
+        margin: 0 0 12px;
+      }
+
+      .summary {
+        max-width: 780px;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .truth-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 22px;
+      }
+
+      .truth {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfd;
+        padding: 12px;
+      }
+
+      .truth-label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .truth-value {
+        margin-top: 4px;
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .chart-preview {
+        min-width: 0;
+        padding: 18px;
+      }
+
+      .preview-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+
+      .segmented {
+        display: inline-grid;
+        grid-auto-flow: column;
+        gap: 4px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #f8fafc;
+        padding: 4px;
+      }
+
+      .segmented button {
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-weight: 800;
+        padding: 6px 9px;
+      }
+
+      .segmented button.active {
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .phone {
+        position: relative;
+        min-height: 390px;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background:
+          linear-gradient(#ffffff, #ffffff) padding-box,
+          linear-gradient(160deg, #e6eef7, #dff1ee) border-box;
+      }
+
+      .phone-bar {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        background: #f8fafc;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        padding: 9px 12px;
+      }
+
+      .chart-card {
+        position: absolute;
+        left: 28px;
+        right: 28px;
+        top: 64px;
+        min-height: 246px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 16px;
+      }
+
+      .bars {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        align-items: end;
+        height: 148px;
+        border-bottom: 2px solid #cbd5e1;
+        padding: 0 8px 8px;
+      }
+
+      .bar {
+        border-radius: 5px 5px 0 0;
+        background: linear-gradient(180deg, #2563eb, #38bdf8);
+      }
+
+      .bar:nth-child(1) {
+        height: 58px;
+      }
+
+      .bar:nth-child(2) {
+        height: 94px;
+      }
+
+      .bar:nth-child(3) {
+        height: 72px;
+      }
+
+      .bar:nth-child(4) {
+        height: 124px;
+      }
+
+      .bar:nth-child(5) {
+        height: 104px;
+      }
+
+      .area-preview {
+        position: relative;
+        height: 160px;
+        border-bottom: 2px solid #cbd5e1;
+        background:
+          linear-gradient(180deg, rgba(14, 109, 95, 0.12), rgba(14, 109, 95, 0.02)),
+          repeating-linear-gradient(0deg, transparent, transparent 38px, #eef2f7 39px);
+        clip-path: polygon(0 76%, 18% 56%, 38% 63%, 58% 34%, 78% 48%, 100% 18%, 100% 100%, 0 100%);
+      }
+
+      .heat-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 24px);
+        gap: 6px;
+        margin-top: 18px;
+      }
+
+      .heat-cell {
+        width: 24px;
+        height: 24px;
+        border-radius: 5px;
+        background: var(--green-soft);
+      }
+
+      .heat-cell:nth-child(3n) {
+        background: #8bd6aa;
+      }
+
+      .heat-cell:nth-child(4n) {
+        background: #2d9464;
+      }
+
+      .pie-preview {
+        width: 156px;
+        height: 156px;
+        margin: 18px auto 0;
+        border-radius: 50%;
+        background: conic-gradient(#2563eb 0 54%, #16a34a 54% 78%, #f97316 78% 92%, #db2777 92% 100%);
+      }
+
+      .radar-preview {
+        width: 180px;
+        height: 180px;
+        margin: 12px auto 0;
+        background:
+          radial-gradient(circle at center, transparent 0 28%, rgba(40, 88, 168, 0.14) 29% 30%, transparent 31% 100%),
+          conic-gradient(from 18deg, transparent 0 9%, rgba(40, 88, 168, 0.2) 9% 10%, transparent 10% 29%, rgba(40, 88, 168, 0.2) 29% 30%, transparent 30% 49%, rgba(40, 88, 168, 0.2) 49% 50%, transparent 50% 69%, rgba(40, 88, 168, 0.2) 69% 70%, transparent 70% 89%, rgba(40, 88, 168, 0.2) 89% 90%, transparent 90%);
+        clip-path: polygon(50% 4%, 96% 38%, 78% 94%, 22% 94%, 4% 38%);
+      }
+
+      .popup-box {
+        position: absolute;
+        right: 24px;
+        top: 72px;
+        width: 124px;
+        min-height: 54px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+        padding: 8px 10px;
+      }
+
+      .popup-title {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .popup-value {
+        color: #0f172a;
+        font-size: 16px;
+        font-weight: 900;
+      }
+
+      .mode-note {
+        min-height: 44px;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .section {
+        margin: 22px 0;
+        padding: 24px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .mini-card {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfd;
+        padding: 14px;
+      }
+
+      .mini-card strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .tag {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        padding: 5px 9px;
+      }
+
+      .tag.good {
+        border-color: #b7dcc8;
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .tag.warn {
+        border-color: #f1cc91;
+        background: var(--orange-soft);
+        color: var(--orange);
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .flow-step {
+        position: relative;
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 14px;
+      }
+
+      .flow-step::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: -10px;
+        width: 10px;
+        height: 2px;
+        background: var(--line-strong);
+      }
+
+      .flow-step:last-child::after {
+        display: none;
+      }
+
+      .step-number {
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        margin-bottom: 10px;
+        border-radius: 50%;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .matrix {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .matrix th,
+      .matrix td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .matrix th {
+        background: #f8fafc;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .matrix tr:last-child td {
+        border-bottom: 0;
+      }
+
+      code {
+        border-radius: 5px;
+        background: #e9eef4;
+        color: #223247;
+        padding: 2px 5px;
+      }
+
+      pre {
+        margin: 10px 0 0;
+        overflow-x: auto;
+        border-radius: 8px;
+        background: var(--code-bg);
+        color: var(--code-text);
+        padding: 14px;
+      }
+
+      pre code {
+        display: block;
+        min-width: max-content;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+        white-space: pre;
+      }
+
+      .command-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .command-card {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfcfd;
+        padding: 14px;
+      }
+
+      .checklist {
+        display: grid;
+        gap: 9px;
+      }
+
+      .check-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 10px 12px;
+      }
+
+      .check-item input {
+        width: 16px;
+        height: 16px;
+        margin-top: 3px;
+        accent-color: var(--accent);
+      }
+
+      .callout {
+        border: 1px solid #f0c77f;
+        border-radius: 8px;
+        background: var(--orange-soft);
+        color: #5f3704;
+        padding: 13px 14px;
+      }
+
+      .callout.good {
+        border-color: #b7dcc8;
+        background: var(--green-soft);
+        color: #104c35;
+      }
+
+      .hidden-by-search {
+        display: none;
+      }
+
+      @media (max-width: 1080px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          position: relative;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .hero,
+        .grid,
+        .grid.three,
+        .command-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .flow {
+          grid-template-columns: 1fr;
+        }
+
+        .flow-step::after {
+          display: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .main {
+          padding: 18px;
+        }
+
+        .hero-copy,
+        .section {
+          padding: 18px;
+        }
+
+        h1 {
+          font-size: 30px;
+        }
+
+        .truth-strip {
+          grid-template-columns: 1fr;
+        }
+
+        .chart-card {
+          left: 14px;
+          right: 14px;
+        }
+
+        .segmented {
+          grid-auto-flow: row;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">RC</div>
+          <div>
+            <p class="brand-title">@bashem/rn-charts</p>
+            <p class="brand-subtitle">Chart library guide</p>
+          </div>
+        </div>
+
+        <input
+          class="search"
+          id="search"
+          type="search"
+          placeholder="Filter sections"
+          aria-label="Filter sections"
+        />
+
+        <nav>
+          <div class="nav-group">
+            <p class="nav-heading">Start</p>
+            <a class="nav-link" href="#overview">Overview</a>
+            <a class="nav-link" href="#install">Install & Run</a>
+            <a class="nav-link" href="#architecture">Architecture</a>
+          </div>
+
+          <div class="nav-group">
+            <p class="nav-heading">Concepts</p>
+            <a class="nav-link" href="#common">Common Props</a>
+            <a class="nav-link" href="#labels">Labels & Renderers</a>
+            <a class="nav-link" href="#popup">Popup Behavior</a>
+          </div>
+
+          <div class="nav-group">
+            <p class="nav-heading">Charts</p>
+            <a class="nav-link" href="#area">AreaChart</a>
+            <a class="nav-link" href="#bar">BarChart</a>
+            <a class="nav-link" href="#heatmap">HeatMap</a>
+            <a class="nav-link" href="#pie">PieChart</a>
+            <a class="nav-link" href="#radar">RadarChart</a>
+          </div>
+
+          <div class="nav-group">
+            <p class="nav-heading">Workflows</p>
+            <a class="nav-link" href="#example">Example App</a>
+            <a class="nav-link" href="#feedback">Fast Feedback</a>
+            <a class="nav-link" href="#debugging">Debugging</a>
+            <a class="nav-link" href="#checks">Manual Checks</a>
+          </div>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <section id="overview" class="hero doc-section" data-title="overview chart library skia react native area bar heat map pie radar">
+          <div class="hero-copy">
+            <p class="eyebrow">Current Truth</p>
+            <h1>rn-charts is a Skia-based React Native chart library with composable labels, renderers, selection, and popups.</h1>
+            <p class="summary">
+              This package exports AreaChart, BarChart, HeatMap, PieChart, and RadarChart. The implementation is mostly
+              TypeScript and React Native UI on top of <code>@shopify/react-native-skia</code>, with a small required
+              native popup helper for full-screen outside-press reporting.
+            </p>
+
+            <div class="truth-strip">
+              <div class="truth">
+                <div class="truth-label">Renderer</div>
+                <div class="truth-value">React Native Skia</div>
+              </div>
+              <div class="truth">
+                <div class="truth-label">Charts</div>
+                <div class="truth-value">Area, Bar, HeatMap, Pie, Radar</div>
+              </div>
+              <div class="truth">
+                <div class="truth-label">Popup model</div>
+                <div class="truth-value">Caller-owned state</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel chart-preview">
+            <div class="preview-header">
+              <strong>Chart preview</strong>
+              <div class="segmented" aria-label="Preview chart">
+                <button class="active" type="button" data-chart-mode="bar">Bar</button>
+                <button type="button" data-chart-mode="area">Area</button>
+                <button type="button" data-chart-mode="heat">Heat</button>
+                <button type="button" data-chart-mode="pie">Pie</button>
+                <button type="button" data-chart-mode="radar">Radar</button>
+              </div>
+            </div>
+
+            <div class="phone">
+              <div class="phone-bar">
+                <span>rn-charts example</span>
+                <span data-preview-kind>BarChart</span>
+              </div>
+              <div class="chart-card" data-preview-stage>
+                <strong data-preview-title>BarChart</strong>
+                <div class="bars" data-preview-visual aria-hidden="true">
+                  <div class="bar"></div>
+                  <div class="bar"></div>
+                  <div class="bar"></div>
+                  <div class="bar"></div>
+                  <div class="bar"></div>
+                </div>
+                <div class="popup-box">
+                  <div class="popup-title" data-preview-popup-title>Equity</div>
+                  <div class="popup-value" data-preview-popup-value>56</div>
+                </div>
+              </div>
+            </div>
+
+            <p class="mode-note" data-preview-note>
+              BarChart renders stacked bars, supports horizontal scrolling, custom bar renderers, selection overlays,
+              and optional popup content.
+            </p>
+          </div>
+        </section>
+
+        <section id="install" class="panel section doc-section" data-title="install run dependencies npm expo native popup skia gesture reanimated">
+          <h2>Install & Run</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Package dependencies</h3>
+              <p>
+                The package depends on <code>@bashem/rn-popup</code> as a normal dependency. App users also need the
+                chart peer stack: React, React Native, Skia, Gesture Handler, Reanimated, and Worklets.
+              </p>
+              <div class="tag-row">
+                <span class="tag good">Skia rendering</span>
+                <span class="tag good">Native popup helper</span>
+                <span class="tag">New Architecture app</span>
+              </div>
+            </div>
+
+            <div class="mini-card">
+              <h3>Local example commands</h3>
+              <p>Run these from <code>rn-app/packages/rn-charts</code>.</p>
+              <pre><code>npm run example:start</code></pre>
+              <pre><code>npm run example:android</code></pre>
+            </div>
+          </div>
+
+          <div class="command-grid" style="margin-top: 14px;">
+            <div class="command-card">
+              <h3>Build Android APK only</h3>
+              <pre><code>example/android/gradlew -p example/android app:assembleDebug -PreactNativeArchitectures=arm64-v8a</code></pre>
+            </div>
+
+            <div class="command-card">
+              <h3>Check TypeScript</h3>
+              <pre><code>npm run typecheck</code></pre>
+            </div>
+          </div>
+
+          <div class="callout" style="margin-top: 14px;">
+            JavaScript and TypeScript changes under <code>src</code> should use Fast Refresh once the development build
+            is installed. Native changes in <code>rn-popup</code> require rebuilding and reinstalling the app.
+          </div>
+        </section>
+
+        <section id="architecture" class="panel section doc-section" data-title="architecture source hooks skia canvas overlays popup root host">
+          <h2>Architecture</h2>
+          <div class="flow">
+            <div class="flow-step">
+              <div class="step-number">1</div>
+              <strong>Public exports</strong>
+              <p><code>src/index.tsx</code> exports chart components and their public types.</p>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">2</div>
+              <strong>Chart component</strong>
+              <p>Each chart file owns public props and mixes Skia canvas with React Native overlays.</p>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">3</div>
+              <strong>Chart hook</strong>
+              <p>Hooks calculate dimensions, paths, selected data, label positions, and touch handling.</p>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">4</div>
+              <strong>Shared helpers</strong>
+              <p>Common padding and label components keep axis behavior consistent across chart types.</p>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">5</div>
+              <strong>Native popup</strong>
+              <p>The shared popup bridge uses <code>@bashem/rn-popup</code> for outside-touch notification.</p>
+            </div>
+          </div>
+
+          <div class="grid" style="margin-top: 14px;">
+            <div class="mini-card">
+              <h3>Source layout</h3>
+              <pre><code>src/
+  index.tsx
+  skia/
+    AreaChart/
+    BarChart/
+    HeatMap/
+    PieChart/
+    RadarChart/
+    Common/
+    Popup.tsx</code></pre>
+            </div>
+
+            <div class="mini-card">
+              <h3>Render layers</h3>
+              <p>
+                Skia draws fast primitives such as paths, rects, gradients, polygons, and circles. React Native views
+                render labels, center content, selected overlays, and popup children.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="common" class="panel section doc-section" data-title="common props style padding ranges min max labels data">
+          <h2>Common Props</h2>
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>Concept</th>
+                <th>Where</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>CommonStyle</code></td>
+                <td>Most chart <code>style</code> objects</td>
+                <td>Supports padding, background color, and RTL-aware left/right/start/end padding.</td>
+              </tr>
+              <tr>
+                <td><code>minValue</code> / <code>maxValue</code></td>
+                <td>Area, Bar, HeatMap, Radar</td>
+                <td>Override computed value ranges when you need stable chart scale across renders.</td>
+              </tr>
+              <tr>
+                <td><code>xLabelView</code> / <code>yLabelView</code></td>
+                <td>Area, Bar, HeatMap</td>
+                <td>Render React Native labels around Skia canvas content.</td>
+              </tr>
+              <tr>
+                <td>Skia render callbacks</td>
+                <td>Bar, HeatMap, Radar labels</td>
+                <td>Inject custom Skia elements for cells, bars, selected states, or labels.</td>
+              </tr>
+              <tr>
+                <td><code>popupStyle</code></td>
+                <td>Area, Bar, HeatMap, Pie</td>
+                <td>Defines fixed popup dimensions and a React renderer for selected data.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="area" class="panel section doc-section" data-title="areachart area chart line series labels popup points">
+          <h2>AreaChart</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Data shape</h3>
+              <pre><code>type AreaData = {
+  values: number[];
+  label?: string;
+  color?: string;
+};</code></pre>
+              <p>
+                Each item is a series. Touching a column selects values from every series at that x-index, so the popup
+                can render multiple rows.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <h3>Main props</h3>
+              <p><code>data</code>, <code>yLabels</code>, <code>xLabels</code>, <code>minValue</code>, <code>maxValue</code>, <code>xLabelView</code>, <code>yLabelView</code>, <code>popupStyle</code>, and <code>style</code>.</p>
+              <p>
+                Style supports fixed <code>width</code> and <code>height</code>, point radius, point lightening, and
+                vertical/horizontal label styling.
+              </p>
+            </div>
+          </div>
+
+          <pre><code>&lt;AreaChart
+  data={areaData}
+  minValue={0}
+  maxValue={80}
+  xLabels={["Jan", "Feb", "Mar"]}
+  yLabels={[1, 0.5, 0]}
+  popupStyle={{
+    width: 132,
+    height: 54,
+    renderPopup: ({ rowIndex, value }) =&gt; popupText(areaData[rowIndex]?.label ?? "Series", value),
+  }}
+  style={{ width: chartWidth, height: 230, pointRadius: 4 }}
+/&gt;</code></pre>
+        </section>
+
+        <section id="bar" class="panel section doc-section" data-title="barchart bar chart stacked horizontal scroll selection gradients">
+          <h2>BarChart</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Data shape</h3>
+              <pre><code>type StackValue = {
+  value: number;
+  label: string;
+  id?: string;
+};
+
+type BarData = {
+  values: StackValue[];
+  label?: string;
+};</code></pre>
+              <p>Each bar can contain multiple stack values. Colors are resolved by stack <code>id</code> or label.</p>
+            </div>
+
+            <div class="mini-card">
+              <h3>Customization</h3>
+              <p>
+                Use <code>colors</code> for solid or gradient fills, <code>barSkiaView</code> to fully replace bar
+                drawing, <code>onSelectBarView</code> for React Native overlays, and
+                <code>onSelectBarSkiaView</code> for Skia overlays.
+              </p>
+              <div class="tag-row">
+                <span class="tag">Horizontal scroll</span>
+                <span class="tag">Stacked values</span>
+                <span class="tag">Selection overlays</span>
+              </div>
+            </div>
+          </div>
+
+          <pre><code>&lt;BarChart
+  data={barData}
+  colors={{
+    equity: ["#2563EB", "#38BDF8"],
+    cash: ["#F97316", "#FACC15"],
+  }}
+  yLabels={[1, 0.75, 0.5, 0.25, 0]}
+  popupStyle={{
+    width: 124,
+    height: 54,
+    renderPopup: (value) =&gt; popupText(value.label, value.value),
+  }}
+  style={{ width: chartWidth, height: 220, barWidth: 32, barSpacing: 18 }}
+/&gt;</code></pre>
+        </section>
+
+        <section id="heatmap" class="panel section doc-section" data-title="heatmap heat map cells groups coalesce labels selection">
+          <h2>HeatMap</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Data shape</h3>
+              <pre><code>type HeatMapDataGroup = {
+  cols: number;
+  startingRow: number;
+  endingRow: number;
+  data?: Record&lt;number, Record&lt;number, number&gt;&gt;;
+};</code></pre>
+              <p>
+                Groups let you model streaks or blocks of cells. <code>startingRow</code> and <code>endingRow</code>
+                describe how a group flows through rows.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <h3>Customization</h3>
+              <p>
+                Use <code>cellSize</code>, <code>cellGap</code>, <code>cellMinColor</code>, and
+                <code>cellMaxColor</code> for the built-in color ramp. Use <code>cellSkiaView</code> to replace cell
+                drawing.
+              </p>
+              <p>
+                <code>onSelectView</code> and <code>onSelectSkiaView</code> render selected-cell overlays.
+              </p>
+            </div>
+          </div>
+
+          <pre><code>&lt;HeatMap
+  rows={7}
+  data={heatMapData}
+  minValue={0}
+  maxValue={24}
+  xLabelView={(index, width) =&gt; &lt;Text style={{ width }}&gt;W{index + 1}&lt;/Text&gt;}
+  yLabelView={(index) =&gt; axisLabel(dayLabels[index] ?? "")}
+  popupStyle={{
+    width: 112,
+    height: 54,
+    renderPopup: (datum) =&gt; popupText(`R${datum.rowIndex + 1} C${datum.colIndex + 1}`, datum.value),
+  }}
+  style={{ cellSize: 24, cellGap: 5 }}
+/&gt;</code></pre>
+        </section>
+
+        <section id="pie" class="panel section doc-section" data-title="piechart pie chart slices center view popup touch">
+          <h2>PieChart</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Data shape</h3>
+              <pre><code>type PieSlice = {
+  value: number;
+  color?: string;
+  label?: string;
+  radius?: number;
+};</code></pre>
+              <p>
+                Slices are normalized by total value. The optional slice <code>radius</code> controls rounded corner
+                drawing.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <h3>Center content</h3>
+              <p>
+                Use <code>centerView</code> for React Native content inside the donut, or
+                <code>centerSkiaView</code> for Skia content. <code>onSliceTouch</code> reports selected slice data.
+              </p>
+            </div>
+          </div>
+
+          <pre><code>&lt;PieChart
+  slices={pieSlices}
+  onSliceTouch={(slice) =&gt; setSelectedSlice(slice)}
+  centerView={&lt;Text&gt;100%&lt;/Text&gt;}
+  popupStyle={{
+    width: 116,
+    height: 54,
+    renderPopup: (slice) =&gt; popupText(slice.label ?? "Slice", `${slice.value}%`),
+  }}
+  style={{ radius: 128, innerRadius: 62, interSliceGap: 0.02, padding: 10 }}
+/&gt;</code></pre>
+        </section>
+
+        <section id="radar" class="panel section doc-section" data-title="radarchart radar chart polygons labels levels">
+          <h2>RadarChart</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Data shape</h3>
+              <pre><code>type RadarDatum = {
+  values: number[];
+  backgroundColor?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+};</code></pre>
+              <p>
+                Each datum draws a polygon. Every polygon should have the same number of values as the label count.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <h3>Main props</h3>
+              <p>
+                Use <code>labels</code> for text labels, <code>labelViews</code> for custom React label nodes,
+                <code>levels</code> for grid rings, and <code>minValue</code>/<code>maxValue</code> for scale.
+              </p>
+              <p>RadarChart does not currently use popup integration.</p>
+            </div>
+          </div>
+
+          <pre><code>&lt;RadarChart
+  data={radarData}
+  labels={["Growth", "Risk", "Income", "Fees", "Quality"]}
+  levels={5}
+  minValue={0}
+  maxValue={100}
+  style={{ size: 320, strokeWidth: 1, centerDotRadius: 3 }}
+/&gt;</code></pre>
+        </section>
+
+        <section id="labels" class="panel section doc-section" data-title="labels renderers axes custom view skia">
+          <h2>Labels & Renderers</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>React Native labels</h3>
+              <p>
+                <code>xLabelView</code> and <code>yLabelView</code> return React Native elements. The shared label
+                containers measure those views and reserve axis space.
+              </p>
+              <pre><code>yLabelView={(percentage, min, max) =&gt;
+  axisLabel(String(Math.round(min + (max - min) * percentage)))
+}</code></pre>
+            </div>
+
+            <div class="mini-card">
+              <h3>Skia render callbacks</h3>
+              <p>
+                Some charts expose Skia callbacks for custom primitives. BarChart supports custom bars and selected
+                bars. HeatMap supports custom cells, selected cells, and Skia labels.
+              </p>
+              <pre><code>cellSkiaView={(rect, datum) =&gt; (
+  &lt;Rect rect={rect} color={datum.value &gt; 10 ? "#15803D" : "#DCFCE7"} /&gt;
+)}</code></pre>
+            </div>
+          </div>
+
+          <div class="callout" style="margin-top: 14px;">
+            Label sizing is dynamic unless you provide explicit axis label dimensions such as
+            <code>verticalLabelStyle.width</code> or <code>horizontalLabelStyle.height</code>.
+          </div>
+        </section>
+
+        <section id="popup" class="panel section doc-section" data-title="popup outside press notify rn popup width height caller state">
+          <h2>Popup Behavior</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Contract</h3>
+              <p>
+                The shared <code>src/skia/Popup.tsx</code> bridge renders React popup children through
+                <code>@bashem/rn-popup</code>. It sets native <code>outsideTouchBehavior</code> to
+                <code>pass-through</code>, so native reports outside touches and lets that same touch reach the
+                underlying view.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <h3>Caller-owned state</h3>
+              <p>
+                The popup does not decide whether selection should be cleared. The chart that passes
+                <code>onTouchOutside</code> owns that behavior. Current chart integrations clear selected popup state
+                in their callback.
+              </p>
+            </div>
+          </div>
+
+          <table class="matrix" style="margin-top: 14px;">
+            <thead>
+              <tr>
+                <th>Requirement</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>popupStyle.width</code> and <code>popupStyle.height</code></td>
+                <td>The native helper uses the first child as the popup hit area, so the bridge needs fixed bounds.</td>
+              </tr>
+              <tr>
+                <td><code>renderPopup(data)</code></td>
+                <td>Transforms selected chart data into React Native popup content.</td>
+              </tr>
+              <tr>
+                <td><code>viewOffset</code></td>
+                <td>Measured chart screen position lets root-host popup content appear at the intended chart coordinate.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="example" class="panel section doc-section" data-title="example app expo router components area bar heat map pie radar">
+          <h2>Example App</h2>
+          <p>
+            The example app uses Expo Router and renders all chart examples in one scroll view. Each chart is split into
+            its own component under <code>example/components</code>.
+          </p>
+
+          <div class="grid three">
+            <div class="mini-card">
+              <strong>Route</strong>
+              <p><code>example/app/index.tsx</code> computes a responsive chart width and stacks every example.</p>
+            </div>
+
+            <div class="mini-card">
+              <strong>Examples</strong>
+              <p><code>AreaChartExample</code>, <code>BarChartExample</code>, <code>HeatMapExample</code>, <code>PieChartExample</code>, and <code>RadarChartExample</code>.</p>
+            </div>
+
+            <div class="mini-card">
+              <strong>Shared UI</strong>
+              <p><code>example/components/shared.tsx</code> provides section wrappers, axis labels, and popup text.</p>
+            </div>
+          </div>
+
+          <div class="callout good" style="margin-top: 14px;">
+            The example screen also includes top and bottom touch target buttons with counters. Open a chart popup,
+            press one of those buttons, and compare whether the counter changes to confirm whether the outside touch
+            reached the underlying React Native view.
+          </div>
+        </section>
+
+        <section id="feedback" class="panel section doc-section" data-title="fast feedback hot reload rebuild native js">
+          <h2>Fast Feedback</h2>
+          <div class="grid three">
+            <div class="mini-card">
+              <strong>Editing chart JS or TS</strong>
+              <p>
+                Keep Metro running and use Fast Refresh. This covers most changes in <code>rn-charts/src</code> and
+                <code>rn-charts/example</code>.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <strong>Editing popup native code</strong>
+              <p>
+                Rebuild and reinstall the example app. Native Kotlin changes in <code>rn-popup</code> do not hot reload
+                into an installed development build.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <strong>Editing generated package output</strong>
+              <p>
+                Source is under <code>src</code>. Build output under <code>lib</code> is generated by
+                <code>bob build</code>.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="debugging" class="panel section doc-section" data-title="debugging typecheck lint autolinking popup dimensions skia">
+          <h2>Debugging</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Popup does not appear</h3>
+              <p>
+                Confirm <code>popupStyle.width</code>, <code>popupStyle.height</code>, and
+                <code>popupStyle.renderPopup</code> are provided. The shared popup returns <code>null</code> without
+                dimensions.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <h3>Native view not found</h3>
+              <p>
+                Rebuild the development app and confirm Gradle includes <code>:bashem_rn-popup</code>.
+              </p>
+              <pre><code>example/android/gradlew -p example/android projects</code></pre>
+            </div>
+
+            <div class="mini-card">
+              <h3>Selection coordinate feels wrong</h3>
+              <p>
+                Check chart padding, vertical label width, horizontal label height, and whether the selected data is in
+                chart-space or root-screen-space.
+              </p>
+            </div>
+
+            <div class="mini-card">
+              <h3>Lint noise</h3>
+              <p>
+                The current package has broad existing Prettier/style issues. Use <code>npm run typecheck</code> as the
+                narrowest reliable check when you are not intentionally formatting the project.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="checks" class="panel section doc-section" data-title="manual checks acceptance area bar heat map pie radar popup">
+          <h2>Manual Checks</h2>
+          <div class="grid">
+            <div class="mini-card">
+              <h3>Chart coverage</h3>
+              <div class="checklist">
+                <label class="check-item"><input type="checkbox" /> <span>AreaChart renders all series, labels, points, and multi-row popup data.</span></label>
+                <label class="check-item"><input type="checkbox" /> <span>BarChart renders stacked bars, gradients, horizontal scroll, selection overlay, and popup data.</span></label>
+                <label class="check-item"><input type="checkbox" /> <span>HeatMap renders grouped cells, labels, selected-cell overlay, and popup data.</span></label>
+                <label class="check-item"><input type="checkbox" /> <span>PieChart renders slices, center content, slice touch callback, and popup data.</span></label>
+                <label class="check-item"><input type="checkbox" /> <span>RadarChart renders polygons, grid levels, axes, labels, and custom label views.</span></label>
+              </div>
+            </div>
+
+            <div class="mini-card">
+              <h3>Popup acceptance</h3>
+              <div class="checklist">
+                <label class="check-item"><input type="checkbox" /> <span>Press inside popup content: outside callback does not fire.</span></label>
+                <label class="check-item"><input type="checkbox" /> <span>Press outside popup: outside callback fires and the same touch reaches the view behind it.</span></label>
+                <label class="check-item"><input type="checkbox" /> <span>Caller clears chart selection from its outside callback if it wants the popup removed.</span></label>
+                <label class="check-item"><input type="checkbox" /> <span>After caller clears selection, tapping the chart again opens a new popup normally.</span></label>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const sections = Array.from(document.querySelectorAll(".doc-section"));
+      const navLinks = Array.from(document.querySelectorAll(".nav-link"));
+      const search = document.querySelector("#search");
+      const previewButtons = Array.from(document.querySelectorAll("[data-chart-mode]"));
+      const previewKind = document.querySelector("[data-preview-kind]");
+      const previewTitle = document.querySelector("[data-preview-title]");
+      const previewVisual = document.querySelector("[data-preview-visual]");
+      const previewPopupTitle = document.querySelector("[data-preview-popup-title]");
+      const previewPopupValue = document.querySelector("[data-preview-popup-value]");
+      const previewNote = document.querySelector("[data-preview-note]");
+
+      const previews = {
+        bar: {
+          kind: "BarChart",
+          title: "BarChart",
+          className: "bars",
+          html: "<div class=\"bar\"></div><div class=\"bar\"></div><div class=\"bar\"></div><div class=\"bar\"></div><div class=\"bar\"></div>",
+          popupTitle: "Equity",
+          popupValue: "56",
+          note: "BarChart renders stacked bars, supports horizontal scrolling, custom bar renderers, selection overlays, and optional popup content.",
+        },
+        area: {
+          kind: "AreaChart",
+          title: "AreaChart",
+          className: "area-preview",
+          html: "",
+          popupTitle: "Balance",
+          popupValue: "74",
+          note: "AreaChart draws one or more filled series and selects a column across all series for popup rendering.",
+        },
+        heat: {
+          kind: "HeatMap",
+          title: "HeatMap",
+          className: "heat-grid",
+          html: Array.from({ length: 28 }, () => "<div class=\"heat-cell\"></div>").join(""),
+          popupTitle: "R4 C2",
+          popupValue: "16",
+          note: "HeatMap renders grouped rectangular cells with computed color intensity, label renderers, and selected-cell overlays.",
+        },
+        pie: {
+          kind: "PieChart",
+          title: "PieChart",
+          className: "pie-preview",
+          html: "",
+          popupTitle: "Stocks",
+          popupValue: "54%",
+          note: "PieChart renders donut slices, optional center content, slice touch callbacks, and popup content.",
+        },
+        radar: {
+          kind: "RadarChart",
+          title: "RadarChart",
+          className: "radar-preview",
+          html: "",
+          popupTitle: "Quality",
+          popupValue: "77",
+          note: "RadarChart renders polygon data against grid levels and axes. It currently has no popup integration.",
+        },
+      };
+
+      search.addEventListener("input", () => {
+        const query = search.value.trim().toLowerCase();
+
+        sections.forEach((section) => {
+          const title = section.dataset.title || "";
+          const text = section.textContent.toLowerCase();
+          const visible = !query || title.includes(query) || text.includes(query);
+
+          section.classList.toggle("hidden-by-search", !visible);
+        });
+      });
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) {
+              return;
+            }
+
+            navLinks.forEach((link) => {
+              link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`);
+            });
+          });
+        },
+        {
+          rootMargin: "-35% 0px -55% 0px",
+          threshold: 0.01,
+        }
+      );
+
+      sections.forEach((section) => observer.observe(section));
+
+      function setChartMode(mode) {
+        const preview = previews[mode];
+
+        if (!preview) {
+          return;
+        }
+
+        previewButtons.forEach((button) => {
+          button.classList.toggle("active", button.dataset.chartMode === mode);
+        });
+
+        previewKind.textContent = preview.kind;
+        previewTitle.textContent = preview.title;
+        previewVisual.className = preview.className;
+        previewVisual.innerHTML = preview.html;
+        previewPopupTitle.textContent = preview.popupTitle;
+        previewPopupValue.textContent = preview.popupValue;
+        previewNote.textContent = preview.note;
+      }
+
+      previewButtons.forEach((button) => {
+        button.addEventListener("click", () => setChartMode(button.dataset.chartMode));
+      });
+    </script>
+  </body>
+</html>

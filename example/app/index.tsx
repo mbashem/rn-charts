@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import {
   AreaChartExample,
@@ -6,8 +6,8 @@ import {
   HeatMapExample,
   PieChartExample,
   RadarChartExample,
-} from '../components';
-import { exampleStyles } from '../components/shared';
+} from "../components";
+import { exampleStyles } from "../components/shared";
 
 export default function ChartsExampleScreen() {
   const { width } = useWindowDimensions();
